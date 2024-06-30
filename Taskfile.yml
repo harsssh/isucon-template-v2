@@ -4,6 +4,14 @@ version: "3"
 
 vars:
   # Frequently changed
+  SERVICES: mysql nginx
+  MANAGED_CONFIG:
+    sh: |
+      cat << EOF | tr '\n' ' '
+      /etc/mysql /etc/nginx /etc/sysctl.d
+      $(sudo systemctl show --value -p FragmentPath mysql 2> /dev/null)
+      $(sudo systemctl show --value -p FragmentPath nginx 2> /dev/null)
+      EOF
 
   # Rarely changed
   CMD_INSTALL_DIR: /usr/local/bin
@@ -23,9 +31,50 @@ tasks:
       - task: install-pprotein-service
       - task: install-pprotein-config
 
+  collect-config:
+    desc: Collect system configuration files under the repository
+    cmds:
+      - |
+        for path in {{.MANAGED_CONFIG}}; do
+          target_path=$(realpath --relative-to={{.USER_WORKING_DIR}}/common "$path")
+          if [ -e "$path" ]; then
+            mkdir -p "$(dirname $target_path)"
+            sudo cp -a "$path/" "$target_path"
+            sudo chown -R "$(id -u):$(id -g)" "$target_path"
+          fi
+        done
+
+  ####################
+  #      Deploy      #
+  ####################
+  deploy:
+    desc: Deploy the latest configuration 
+    deps:
+      - checkout
+    cmds:
+      - |
+        for path in {{.MANAGED_CONFIG}}; do
+          target_path=$(realpath --relative-to={{.USER_WORKING_DIR}}/common "$path")
+          if [ -e "$target_path" ]; then
+            sudo cp -a "$target_path/" "$path"
+            sudo chown -R root:root "$path"
+          fi
+        done
+      - task: restart-all
+      - task: reload-sysctl
+
   ####################
   #     Utility      #
   ####################
+  checkout:
+    desc: Checkout and sync with the latest remote branch
+    vars:
+      BRANCH: "{{.CLI_ARGS | default main}}"
+    cmds:
+      - git fetch --all
+      - git reset --hard origin/{{.BRANCH}}
+      - git switch -C {{.BRANCH}} origin/{{.BRANCH}}
+
   enable:
     desc: Enable and start specified services
     cmds:
@@ -40,6 +89,16 @@ tasks:
     desc: Restart specified services
     cmds:
       - for service in {{.CLI_ARGS}}; do sudo systemctl restart $service; done
+
+  restart-all:
+    desc: Restart all services related to the application
+    cmds:
+      - for service in {{.SERVICES}}; do sudo systemctl restart $service; done
+
+  reload-sysctl:
+    desc: Reload sysctl configuration
+    cmds:
+      - sudo sysctl -p
 
   hostname:
     desc: Set hostname
