@@ -36,7 +36,7 @@ tasks:
     cmds:
       - |
         for path in {{.MANAGED_CONFIG}}; do
-          target_path=$(realpath --relative-to={{.USER_WORKING_DIR}}/common "$path")
+          target_path="{{.USER_WORKING_DIR}}/common/$(realpath --relative-to=/ $path)"
           if [ -e "$path" ]; then
             mkdir -p "$(dirname $target_path)"
             sudo cp -a "$path/" "$target_path"
@@ -48,18 +48,11 @@ tasks:
   #      Deploy      #
   ####################
   deploy:
-    desc: Deploy the latest configuration 
+    desc: Deploy the latest configuration
     deps:
       - checkout
     cmds:
-      - |
-        for path in {{.MANAGED_CONFIG}}; do
-          target_path=$(realpath --relative-to={{.USER_WORKING_DIR}}/common "$path")
-          if [ -e "$target_path" ]; then
-            sudo cp -a "$target_path/" "$path"
-            sudo chown -R root:root "$path"
-          fi
-        done
+      - task: distribute-config
       - task: restart-all
       - task: reload-sysctl
 
@@ -108,6 +101,29 @@ tasks:
   ####################
   #     Internal     #
   ####################
+  distribute-config:
+    internal: true
+    cmds:
+      - |
+        for path in {{.MANAGED_CONFIG}}; do
+          hostname=$(hostname)
+          relative_path=$(realpath --relative-to=/ "$path")
+          host_specific_path="{{.USER_WORKING_DIR}}/$hostname/$relative_path"
+          common_path="{{.USER_WORKING_DIR}}/common/$relative_path"
+
+          source_path=""
+          if [ -e "$host_specific_path" ]; then
+            source_path="$host_specific_path"
+          elif [ -e "$common_path" ]; then
+            source_path="$common_path"
+          fi
+
+          if [ -n "$source_path" ]; then
+            sudo cp -a "$source_path/" "$path"
+            sudo chown -R root:root "$path"
+          fi
+        done
+
   install-pprotein:
     internal: true
     vars:
