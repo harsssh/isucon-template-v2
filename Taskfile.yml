@@ -41,6 +41,11 @@ tasks:
     cmds:
       - for service in {{.CLI_ARGS}}; do sudo systemctl restart $service; done
 
+  hostname:
+    desc: Set hostname
+    cmds:
+      - sudo hostnamectl set-hostname {{.CLI_ARGS}}
+
   ####################
   #     Internal     #
   ####################
