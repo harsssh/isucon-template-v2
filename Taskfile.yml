@@ -10,6 +10,40 @@ vars:
   PPROTEIN_CONFIG_DIR: /etc/pprotein
 
 tasks:
+  ####################
+  #      Setup       #
+  ####################
+  install-tools:
+    desc: Install all tools
+    cmds:
+      - sudo apt-get update
+      - sudo apt-get install -y tree jq graphviz
+      - task: install-bottom
+      - task: install-pprotein
+      - task: install-pprotein-service
+      - task: install-pprotein-config
+
+  ####################
+  #     Utility      #
+  ####################
+  enable:
+    desc: Enable and start specified services
+    cmds:
+      - for service in {{.CLI_ARGS}}; do sudo systemctl enable --now $service; done
+
+  disable:
+    desc: Disable and stop specified services
+    cmds:
+      - for service in {{.CLI_ARGS}}; do sudo systemctl disable --now $service; done
+
+  restart:
+    desc: Restart specified services
+    cmds:
+      - for service in {{.CLI_ARGS}}; do sudo systemctl restart $service; done
+
+  ####################
+  #     Internal     #
+  ####################
   install-pprotein:
     internal: true
     vars:
@@ -127,13 +161,3 @@ tasks:
       - sudo dpkg -i bottom_{{.BOTTOM_VERSION}}_amd64.deb
     status:
       - dpkg -l | grep bottom
-
-  install-tools:
-    desc: Install all tools
-    cmds:
-      - sudo apt-get update
-      - sudo apt-get install -y tree jq graphviz
-      - task: install-bottom
-      - task: install-pprotein
-      - task: install-pprotein-service
-      - task: install-pprotein-config
