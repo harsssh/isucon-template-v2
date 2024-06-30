@@ -7,6 +7,7 @@ vars:
 
   # Rarely changed
   CMD_INSTALL_DIR: /usr/local/bin
+  PPROTEIN_CONFIG_DIR: /etc/pprotein
 
 tasks:
   install-pprotein:
@@ -31,6 +32,90 @@ tasks:
       - test -f {{.CMD_INSTALL_DIR}}/alp
       - test -f {{.CMD_INSTALL_DIR}}/slp
 
+  install-pprotein-service:
+    internal: true
+    cmds:
+      - |
+        sudo cat << EOF > /etc/systemd/system/pprotein.service
+        [Unit]
+        Description=pprotein
+        After=network.target
+
+        [Service]
+        ExecStart={{.CMD_INSTALL_DIR}}/pprotein
+        WorkingDirectory={{.PPROTEIN_CONFIG_DIR}}
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+      - |
+        sudo cat << EOF > /etc/systemd/system/pprotein-agent.service
+        [Unit]
+        Description=pprotein-agent
+        After=network.target
+
+        [Service]
+        ExecStart={{.CMD_INSTALL_DIR}}/pprotein-agent
+        Environment=PPROTEIN_GIT_REPOSITORY={{.USER_WORKING_DIR}}
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+      - sudo systemctl daemon-reload
+    status:
+      - test -f /etc/systemd/system/pprotein.service
+      - test -f /etc/systemd/system/pprotein-agent.service
+
+  install-pprotein-config:
+    internal: true
+    cmds:
+      - sudo mkdir -p {{.PPROTEIN_CONFIG_DIR}}/data
+      - |
+        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/targets.json
+        [
+          {
+            "Duration": 60,
+            "Label": "localhost",
+            "Type": "pprof",
+            "URL": "http://localhost:19000/debug/pprof/profile"
+          },
+          {
+            "Duration": 60,
+            "Label": "localhost",
+            "Type": "httplog",
+            "URL": "http://localhost:19000/debug/log/httplog"
+          },
+          {
+            "Duration": 60,
+            "Label": "localhost",
+            "Type": "slowlog",
+            "URL": "http://localhost:19000/debug/log/slowlog"
+          }
+        ]
+        EOF
+      - |
+        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml
+        matching_groups:
+          - ^/api/mock/.+[0-9]$
+          - ^/api/mock/.+[a-z]$
+        output: count,2xx,3xx,4xx,5xx,method,uri,sum,avg,p50,p90,p99,max_body
+        percentiles: [ 50, 90, 99 ]
+        EOF
+      - |
+        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/slp.yml
+        bundle_values: true
+        bundle_where_in: true
+        filters: Query matches "^(SELECT|INSERT|UPDATE|REPLACE) "
+        limit: 65536
+        output: count,query,sum-query-time,avg-query-time,sum-lock-time,avg-lock-time,sum-rows-sent,avg-rows-sent,sum-rows-examined,avg-rows-examined
+        EOF
+    status:
+      - test -f {{.PPROTEIN_CONFIG_DIR}}/data/targets.json
+      - test -f {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml
+      - test -f {{.PPROTEIN_CONFIG_DIR}}/data/slp.yml
+
   install-bottom:
     internal: true
     vars:
@@ -48,5 +133,7 @@ tasks:
     cmds:
       - sudo apt-get update
       - sudo apt-get install -y tree jq graphviz
-      - task: install-pprotein
       - task: install-bottom
+      - task: install-pprotein
+      - task: install-pprotein-service
+      - task: install-pprotein-config
