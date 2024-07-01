@@ -41,7 +41,7 @@ tasks:
           target_path="{{.USER_WORKING_DIR}}/common/$(realpath --relative-to=/ $path)"
           if [ -e "$path" ]; then
             mkdir -p "$(dirname $target_path)"
-            sudo cp -a "$path/" "$target_path"
+            sudo cp -a "$path/." "$target_path"
             sudo chown -R "$(id -u):$(id -g)" "$target_path"
           fi
         done
@@ -49,7 +49,7 @@ tasks:
   import-webapp:
     desc: Move webapp directory under the repository
     cmds:
-      - cp -a "{{.WEBAPP_DIR}}/" {{.USER_WORKING_DIR}}/app
+      - cp -a "{{.WEBAPP_DIR}}/." {{.USER_WORKING_DIR}}/app
       - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak"
       - ln -s {{.USER_WORKING_DIR}}/app "{{.WEBAPP_DIR}}"
     status:
