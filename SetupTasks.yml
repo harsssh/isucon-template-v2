@@ -43,14 +43,20 @@ tasks:
 
   collect-config:
     desc: Collect system configuration files under the repository
+    silent: true
     cmds:
       - |
-        for path in {{.MANAGED_CONFIG}}; do
+        for path in "{{.MANAGED_CONFIG}}"; do
           target_path="{{.USER_WORKING_DIR}}/common/$(realpath --relative-to=/ $path)"
           if [ -e "$path" ]; then
             mkdir -p "$(dirname $target_path)"
-            sudo cp -a "$path/." "$target_path"
+            if [ -d "$path" ]; then
+              sudo cp -a "$path/." "$target_path"
+            else
+              sudo cp "$path" "$target_path"
+            fi
             sudo chown -R "$(id -u):$(id -g)" "$target_path"
+            echo "$path copied to $target_path"
           fi
         done
 
