@@ -37,26 +37,26 @@ tasks:
     desc: Enable and start specified services
     cmds:
       - for: { var: CLI_ARGS }
-        cmd: sudo systemctl enable --now $service
+        cmd: sudo systemctl enable --now {{.ITEM}}
 
   disable:
     desc: Disable and stop specified services
     cmds:
       - for: { var: CLI_ARGS }
-        cmd: sudo systemctl disable --now $service
+        cmd: sudo systemctl disable --now {{.ITEM}}
 
   restart:
     desc: Restart specified services
     silent: true
     cmds:
       - for: { var: CLI_ARGS }
-        cmd: sudo systemctl restart $service && echo "$service restarted"
+        cmd: sudo systemctl restart {{.ITEM}} && echo "{{.ITEM}} restarted"
 
   restart-all:
     desc: Restart all services related to the application
     cmds:
       - for: { var: SERVICES }
-        cmd: sudo systemctl restart $service && echo "$service restarted"
+        cmd: sudo systemctl restart {{.ITEM}} && echo "{{.ITEM}} restarted"
 
   reload-sysctl:
     desc: Reload sysctl configuration
