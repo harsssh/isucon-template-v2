@@ -56,7 +56,7 @@ tasks:
       - test -L "{{.WEBAPP_DIR}}"
       - test -d "{{.WEBAPP_DIR}}"
 
-  enable-task-completion:
+  enable-autocompletion:
     desc: Enable autocompletion for task command
     vars:
       COMPLETION_FILE_URL: https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
