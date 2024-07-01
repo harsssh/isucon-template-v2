@@ -56,6 +56,13 @@ tasks:
       - test -L "{{.WEBAPP_DIR}}"
       - test -d "{{.WEBAPP_DIR}}"
 
+  enable-task-completion:
+    desc: Enable autocompletion for task command
+    vars:
+      COMPLETION_FILE_URL: https://github.com/go-task/task/blob/88b095020e14defcce4645e72f503eb5d880f78d/completion/bash/task.bash
+    cmds:
+      - sudo curl -sL -o /etc/bash_completion.d/task.bash {{.COMPLETION_FILE_URL}}
+
   ####################
   #     Utility      #
   ####################
