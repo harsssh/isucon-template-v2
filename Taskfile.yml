@@ -43,6 +43,16 @@ tasks:
     cmds:
       - sudo systemctl disable --now {{.CLI_ARGS}}
 
+  status:
+    desc: Show status of specified services
+    cmds:
+      - sudo systemctl status {{.CLI_ARGS}}
+
+  status-all:
+    desc: Show status of all services related to the application
+    cmds:
+      - sudo systemctl status {{.SERVICES}}
+
   restart:
     desc: Restart specified services
     cmds:

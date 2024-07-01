@@ -23,15 +23,17 @@ tasks:
   all:
     desc: Run all setup tasks
     deps:
-      - install-tools
-      - import-webapp
-      - collect-config
       - enable-autocompletion
+      - gitconfig
+    cmds:
+      - task: install-tools
+      - task: import-webapp
+      - task: collect-config
 
   install-tools:
     desc: Install all tools
     cmds:
-      - sudo apt-get update && sudo apt-get install -y tree jq graphviz wget
+      - sudo apt-get -q update && sudo apt-get install -q -y tree jq graphviz wget
       - task: install-bottom
       - task: install-pprotein
       - task: install-pprotein-service
@@ -51,7 +53,7 @@ tasks:
   import-webapp:
     desc: Move webapp directory under the repository
     cmds:
-      - cp -a "{{.WEBAPP_DIR}}/." {{.USER_WORKING_DIR}}/app
+      - sudo cp -au "{{.WEBAPP_DIR}}/." {{.USER_WORKING_DIR}}/app
       - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak"
       - ln -s {{.USER_WORKING_DIR}}/app "{{.WEBAPP_DIR}}"
       - task: gitignore-large-webapp-files
@@ -64,7 +66,7 @@ tasks:
     vars:
       COMPLETION_FILE_URL: https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
     cmds:
-      - sudo wget -O /etc/bash_completion.d/task.bash {{.COMPLETION_FILE_URL}}
+      - sudo wget -qO /etc/bash_completion.d/task.bash {{.COMPLETION_FILE_URL}}
     status:
       - test -f /etc/bash_completion.d/task.bash
 
@@ -82,6 +84,17 @@ tasks:
   ####################
   #     Internal     #
   ####################
+  gitconfig:
+    internal: true
+    cmds:
+      - git config --global user.name "$(hostname)"
+      - git config --global user.email "$(hostname)@example.com"
+      - git config --global core.editor vim
+    status:
+      - git config --global --get user.name
+      - git config --global --get user.email
+      - git config --global --get core.editor
+
   gitignore-large-webapp-files:
     internal: true
     dir: ./app
@@ -102,8 +115,7 @@ tasks:
       - curl -sL {{.PPROTEIN_DOWNLOAD_URL}} | tar xz
       - curl -sL {{.ALP_DOWNLOAD_URL}} | tar xz
       - curl -sL {{.SLP_DOWNLOAD_URL}} | tar xz
-      - chmod +x pprotein pprotein-agent alp slp
-      - sudo mv pprotein pprotein-agent alp slp {{.CMD_INSTALL_DIR}}
+      - sudo install -Cv ./pprotein ./pprotein-agent ./alp ./slp {{.CMD_INSTALL_DIR}}
     status:
       - test -f {{.CMD_INSTALL_DIR}}/pprotein
       - test -f {{.CMD_INSTALL_DIR}}/pprotein-agent
@@ -115,7 +127,7 @@ tasks:
     silent: true
     cmds:
       - |
-        sudo cat << EOF > /etc/systemd/system/pprotein.service &&
+        sudo tee /etc/systemd/system/pprotein.service << EOF > /dev/null && \
         echo "/etc/systemd/system/pprotein.service created successfully"
         [Unit]
         Description=pprotein
@@ -130,7 +142,7 @@ tasks:
         WantedBy=multi-user.target
         EOF
       - |
-        sudo cat << EOF > /etc/systemd/system/pprotein-agent.service &&
+        sudo tee /etc/systemd/system/pprotein-agent.service << EOF > /dev/null && \
         echo "/etc/systemd/system/pprotein-agent.service created successfully"
         [Unit]
         Description=pprotein-agent
@@ -166,7 +178,7 @@ tasks:
       BOTTOM_DOWNLOAD_URL: https://github.com/ClementTsang/bottom/releases/download/{{.BOTTOM_VERSION}}/bottom_{{.BOTTOM_VERSION}}_amd64.deb
     dir: /tmp
     cmds:
-      - curl -sLO {{.BOTTOM_DOWNLOAD_URL}}
-      - sudo dpkg -i bottom_{{.BOTTOM_VERSION}}_amd64.deb
+      - wget -qO bottom.deb {{.BOTTOM_DOWNLOAD_URL}}
+      - sudo dpkg -i bottom.deb
     status:
       - dpkg -l | grep bottom
