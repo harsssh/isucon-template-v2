@@ -62,7 +62,6 @@ tasks:
       COMPLETION_FILE_URL: https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
     cmds:
       - sudo wget -O /etc/bash_completion.d/task.bash {{.COMPLETION_FILE_URL}}
-      - echo "Reload bash to enable autocompletion"
     status:
       - test -f /etc/bash_completion.d/task.bash
 
