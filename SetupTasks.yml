@@ -5,7 +5,7 @@ version: "3"
 vars:
   # Frequently changed
   WEBAPP_DIR: /home/isucon/webapp
-  COLLECT_TARGET: |
+  COLLECT_TARGET: >-
     /home/isucon/env.sh
     /etc/mysql
     /etc/nginx
@@ -44,7 +44,7 @@ tasks:
         sh: |
           for service_name in {{.COLLECT_TARGET_SERVICE}}; do
             sudo systemctl show --value -p FragmentPath "$service_name"
-          done
+          done | tr -s '\n' ' '
     cmds:
       - ./assets/collect_config.sh {{.COLLECT_TARGET}} {{.SERVICE_FILES}}
 
