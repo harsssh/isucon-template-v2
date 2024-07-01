@@ -59,7 +59,7 @@ tasks:
   enable-task-completion:
     desc: Enable autocompletion for task command
     vars:
-      COMPLETION_FILE_URL: https://github.com/go-task/task/blob/88b095020e14defcce4645e72f503eb5d880f78d/completion/bash/task.bash
+      COMPLETION_FILE_URL: https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
     cmds:
       - sudo wget -O /etc/bash_completion.d/task.bash {{.COMPLETION_FILE_URL}}
     status:
