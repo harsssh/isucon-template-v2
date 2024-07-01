@@ -148,6 +148,7 @@ tasks:
 
   install-pprotein-service:
     internal: true
+    silent: true
     cmds:
       - |
         sudo cat << EOF > /etc/systemd/system/pprotein.service
@@ -163,6 +164,7 @@ tasks:
         [Install]
         WantedBy=multi-user.target
         EOF
+        echo "/etc/systemd/system/pprotein.service created successfully"
       - |
         sudo cat << EOF > /etc/systemd/system/pprotein-agent.service
         [Unit]
@@ -177,6 +179,7 @@ tasks:
         [Install]
         WantedBy=multi-user.target
         EOF
+        echo "/etc/systemd/system/pprotein-agent.service created successfully"
       - sudo systemctl daemon-reload
     status:
       - test -f /etc/systemd/system/pprotein.service
@@ -184,6 +187,7 @@ tasks:
 
   install-pprotein-config:
     internal: true
+    silent: true
     cmds:
       - sudo mkdir -p {{.PPROTEIN_CONFIG_DIR}}/data
       - |
@@ -209,6 +213,7 @@ tasks:
           }
         ]
         EOF
+        echo "targets.json created successfully"
       - |
         sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml
         matching_groups:
@@ -217,6 +222,7 @@ tasks:
         output: count,2xx,3xx,4xx,5xx,method,uri,sum,avg,p50,p90,p99,max_body
         percentiles: [ 50, 90, 99 ]
         EOF
+        echo "alp.yml created successfully"
       - |
         sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/slp.yml
         bundle_values: true
@@ -225,6 +231,7 @@ tasks:
         limit: 65536
         output: count,query,sum-query-time,avg-query-time,sum-lock-time,avg-lock-time,sum-rows-sent,avg-rows-sent,sum-rows-examined,avg-rows-examined
         EOF
+        echo "slp.yml created successfully"
     status:
       - test -f {{.PPROTEIN_CONFIG_DIR}}/data/targets.json
       - test -f {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml
