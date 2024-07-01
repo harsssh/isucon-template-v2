@@ -45,7 +45,6 @@ tasks:
 
   restart:
     desc: Restart specified services
-    silent: true
     cmds:
       - sudo systemctl restart {{.CLI_ARGS}}
 
