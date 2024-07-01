@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 config_dir_names=("common" "$(hostname)")
 

@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 for config_path in "$@"; do
 	dst_path="$(pwd)/common/${config_path#/}"
