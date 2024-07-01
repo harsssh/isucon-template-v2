@@ -60,6 +60,7 @@ tasks:
       - cp -a "{{.WEBAPP_DIR}}/." {{.USER_WORKING_DIR}}/app
       - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak"
       - ln -s {{.USER_WORKING_DIR}}/app "{{.WEBAPP_DIR}}"
+      - task: gitignore-large-webapp-files
     status:
       - test -L "{{.WEBAPP_DIR}}"
       - test -d "{{.WEBAPP_DIR}}"
@@ -87,6 +88,12 @@ tasks:
   ####################
   #     Internal     #
   ####################
+  gitignore-large-webapp-files:
+    internal: true
+    dir: ./app
+    cmds:
+      - find . -type f -size +100M 2> /dev/null >> .gitignore
+
   install-pprotein:
     internal: true
     vars:
