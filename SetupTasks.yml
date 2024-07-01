@@ -1,0 +1,183 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# https://taskfile.dev
+version: "3"
+
+vars:
+  # Frequently changed
+  MANAGED_CONFIG:
+    sh: |
+      cat << EOF | tr '\n' ' '
+      /etc/mysql /etc/nginx /etc/sysctl.d
+      $(sudo systemctl show --value -p FragmentPath mysql 2> /dev/null)
+      $(sudo systemctl show --value -p FragmentPath nginx 2> /dev/null)
+      EOF
+
+  # Rarely changed
+  CMD_INSTALL_DIR: /usr/local/bin
+  PPROTEIN_CONFIG_DIR: /etc/pprotein
+
+tasks:
+  ####################
+  #      Setup       #
+  ####################
+  install-tools:
+    desc: Install all tools
+    cmds:
+      - sudo apt-get update
+      - sudo apt-get install -y tree jq graphviz
+      - task: install-bottom
+      - task: install-pprotein
+      - task: install-pprotein-service
+      - task: install-pprotein-config
+
+  collect-config:
+    desc: Collect system configuration files under the repository
+    cmds:
+      - |
+        for path in {{.MANAGED_CONFIG}}; do
+          target_path="{{.USER_WORKING_DIR}}/common/$(realpath --relative-to=/ $path)"
+          if [ -e "$path" ]; then
+            mkdir -p "$(dirname $target_path)"
+            sudo cp -a "$path/" "$target_path"
+            sudo chown -R "$(id -u):$(id -g)" "$target_path"
+          fi
+        done
+
+  ####################
+  #     Utility      #
+  ####################
+  hostname:
+    desc: Set hostname
+    cmds:
+      - sudo hostnamectl set-hostname {{.CLI_ARGS}}
+      - sudo tee -a /etc/hosts <<< "127.0.0.1 {{.CLI_ARGS}}" > /dev/null
+    status:
+      - test "$(hostname)" = "{{.CLI_ARGS}}"
+
+  ####################
+  #     Internal     #
+  ####################
+  install-pprotein:
+    internal: true
+    vars:
+      PPROTEIN_VERSION: "1.2.3"
+      ALP_VERSION: "1.0.21"
+      SLP_VERSION: "0.2.1"
+      PPROTEIN_DOWNLOAD_URL: https://github.com/kaz/pprotein/releases/download/v{{.PPROTEIN_VERSION}}/pprotein_{{.PPROTEIN_VERSION}}_linux_amd64.tar.gz
+      ALP_DOWNLOAD_URL: https://github.com/tkuchiki/alp/releases/download/v{{.ALP_VERSION}}/alp_linux_amd64.tar.gz
+      SLP_DOWNLOAD_URL: https://github.com/tkuchiki/slp/releases/download/v{{.SLP_VERSION}}/slp_linux_amd64.tar.gz
+    dir: /tmp/install-pprotein
+    cmds:
+      - curl -sL {{.PPROTEIN_DOWNLOAD_URL}} | tar xz
+      - curl -sL {{.ALP_DOWNLOAD_URL}} | tar xz
+      - curl -sL {{.SLP_DOWNLOAD_URL}} | tar xz
+      - chmod +x pprotein pprotein-agent alp slp
+      - sudo mv pprotein pprotein-agent alp slp {{.CMD_INSTALL_DIR}}
+    status:
+      - test -f {{.CMD_INSTALL_DIR}}/pprotein
+      - test -f {{.CMD_INSTALL_DIR}}/pprotein-agent
+      - test -f {{.CMD_INSTALL_DIR}}/alp
+      - test -f {{.CMD_INSTALL_DIR}}/slp
+
+  install-pprotein-service:
+    internal: true
+    silent: true
+    cmds:
+      - |
+        sudo cat << EOF > /etc/systemd/system/pprotein.service
+        [Unit]
+        Description=pprotein
+        After=network.target
+
+        [Service]
+        ExecStart={{.CMD_INSTALL_DIR}}/pprotein
+        WorkingDirectory={{.PPROTEIN_CONFIG_DIR}}
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+        echo "/etc/systemd/system/pprotein.service created successfully"
+      - |
+        sudo cat << EOF > /etc/systemd/system/pprotein-agent.service
+        [Unit]
+        Description=pprotein-agent
+        After=network.target
+
+        [Service]
+        ExecStart={{.CMD_INSTALL_DIR}}/pprotein-agent
+        Environment=PPROTEIN_GIT_REPOSITORY={{.USER_WORKING_DIR}}
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+        echo "/etc/systemd/system/pprotein-agent.service created successfully"
+      - sudo systemctl daemon-reload
+    status:
+      - test -f /etc/systemd/system/pprotein.service
+      - test -f /etc/systemd/system/pprotein-agent.service
+
+  install-pprotein-config:
+    internal: true
+    silent: true
+    cmds:
+      - sudo mkdir -p {{.PPROTEIN_CONFIG_DIR}}/data
+      - |
+        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/targets.json
+        [
+          {
+            "Duration": 60,
+            "Label": "localhost",
+            "Type": "pprof",
+            "URL": "http://localhost:19000/debug/pprof/profile"
+          },
+          {
+            "Duration": 60,
+            "Label": "localhost",
+            "Type": "httplog",
+            "URL": "http://localhost:19000/debug/log/httplog"
+          },
+          {
+            "Duration": 60,
+            "Label": "localhost",
+            "Type": "slowlog",
+            "URL": "http://localhost:19000/debug/log/slowlog"
+          }
+        ]
+        EOF
+        echo "targets.json created successfully"
+      - |
+        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml
+        matching_groups:
+          - ^/api/mock/.+[0-9]$
+          - ^/api/mock/.+[a-z]$
+        output: count,2xx,3xx,4xx,5xx,method,uri,sum,avg,p50,p90,p99,max_body
+        percentiles: [ 50, 90, 99 ]
+        EOF
+        echo "alp.yml created successfully"
+      - |
+        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/slp.yml
+        bundle_values: true
+        bundle_where_in: true
+        filters: Query matches "^(SELECT|INSERT|UPDATE|REPLACE) "
+        limit: 65536
+        output: count,query,sum-query-time,avg-query-time,sum-lock-time,avg-lock-time,sum-rows-sent,avg-rows-sent,sum-rows-examined,avg-rows-examined
+        EOF
+        echo "slp.yml created successfully"
+    status:
+      - test -f {{.PPROTEIN_CONFIG_DIR}}/data/targets.json
+      - test -f {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml
+      - test -f {{.PPROTEIN_CONFIG_DIR}}/data/slp.yml
+
+  install-bottom:
+    internal: true
+    vars:
+      BOTTOM_VERSION: "0.9.6"
+      BOTTOM_DOWNLOAD_URL: https://github.com/ClementTsang/bottom/releases/download/{{.BOTTOM_VERSION}}/bottom_{{.BOTTOM_VERSION}}_amd64.deb
+    dir: /tmp
+    cmds:
+      - curl -sLO {{.BOTTOM_DOWNLOAD_URL}}
+      - sudo dpkg -i bottom_{{.BOTTOM_VERSION}}_amd64.deb
+    status:
+      - dpkg -l | grep bottom
