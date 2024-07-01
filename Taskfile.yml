@@ -110,7 +110,7 @@ tasks:
     desc: Set hostname
     cmds:
       - sudo hostnamectl set-hostname {{.CLI_ARGS}}
-      - sudo echo "127.0.0.1 {{.CLI_ARGS}}" >> /etc/hosts
+      - sudo tee -a /etc/hosts <<< "127.0.0.1 {{.CLI_ARGS}}" 
     status:
       - test "$(hostname)" = "{{.CLI_ARGS}}"
 
