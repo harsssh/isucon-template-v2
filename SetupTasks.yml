@@ -5,16 +5,12 @@ version: "3"
 vars:
   # Frequently changed
   WEBAPP_DIR: /home/isucon/webapp
-  MANAGED_CONFIG:
-    sh: |
-      cat << EOF | tr '\n' ' '
-      /home/isucon/env.sh
-      /etc/mysql
-      /etc/nginx
-      /etc/sysctl.d
-      $(sudo systemctl show --value -p FragmentPath mysql 2> /dev/null)
-      $(sudo systemctl show --value -p FragmentPath nginx 2> /dev/null)
-      EOF
+  COLLECT_TARGET: |
+    /home/isucon/env.sh
+    /etc/mysql
+    /etc/nginx
+    /etc/sysctl.d
+  COLLECT_TARGET_SERVICE: mysql nginx
 
   # Rarely changed
   CMD_INSTALL_DIR: /usr/local/bin
@@ -43,22 +39,14 @@ tasks:
 
   collect-config:
     desc: Collect system configuration files under the repository
-    silent: true
+    vars:
+      SERVICE_FILES:
+        sh: |
+          for service_name in {{.COLLECT_TARGET_SERVICE}}; do
+            sudo systemctl show --value -p FragmentPath "$service_name"
+          done
     cmds:
-      - |
-        for path in "{{.MANAGED_CONFIG}}"; do
-          target_path="{{.USER_WORKING_DIR}}/common/$(realpath --relative-to=/ $path)"
-          if [ -e "$path" ]; then
-            mkdir -p "$(dirname $target_path)"
-            if [ -d "$path" ]; then
-              sudo cp -a "$path/." "$target_path"
-            else
-              sudo cp "$path" "$target_path"
-            fi
-            sudo chown -R "$(id -u):$(id -g)" "$target_path"
-            echo "$path copied to $target_path"
-          fi
-        done
+      - ./assets/collect_config.sh {{.COLLECT_TARGET}} {{.SERVICE_FILES}}
 
   import-webapp:
     desc: Move webapp directory under the repository
@@ -127,7 +115,8 @@ tasks:
     silent: true
     cmds:
       - |
-        sudo cat << EOF > /etc/systemd/system/pprotein.service
+        sudo cat << EOF > /etc/systemd/system/pprotein.service &&
+        echo "/etc/systemd/system/pprotein.service created successfully"
         [Unit]
         Description=pprotein
         After=network.target
@@ -140,9 +129,9 @@ tasks:
         [Install]
         WantedBy=multi-user.target
         EOF
-        echo "/etc/systemd/system/pprotein.service created successfully"
       - |
-        sudo cat << EOF > /etc/systemd/system/pprotein-agent.service
+        sudo cat << EOF > /etc/systemd/system/pprotein-agent.service &&
+        echo "/etc/systemd/system/pprotein-agent.service created successfully"
         [Unit]
         Description=pprotein-agent
         After=network.target
@@ -155,7 +144,6 @@ tasks:
         [Install]
         WantedBy=multi-user.target
         EOF
-        echo "/etc/systemd/system/pprotein-agent.service created successfully"
       - sudo systemctl daemon-reload
     status:
       - test -f /etc/systemd/system/pprotein.service
@@ -163,51 +151,9 @@ tasks:
 
   install-pprotein-config:
     internal: true
-    silent: true
     cmds:
       - sudo mkdir -p {{.PPROTEIN_CONFIG_DIR}}/data
-      - |
-        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/targets.json
-        [
-          {
-            "Duration": 60,
-            "Label": "localhost",
-            "Type": "pprof",
-            "URL": "http://localhost:19000/debug/pprof/profile"
-          },
-          {
-            "Duration": 60,
-            "Label": "localhost",
-            "Type": "httplog",
-            "URL": "http://localhost:19000/debug/log/httplog"
-          },
-          {
-            "Duration": 60,
-            "Label": "localhost",
-            "Type": "slowlog",
-            "URL": "http://localhost:19000/debug/log/slowlog"
-          }
-        ]
-        EOF
-        echo "targets.json created successfully"
-      - |
-        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml
-        matching_groups:
-          - ^/api/mock/.+[0-9]$
-          - ^/api/mock/.+[a-z]$
-        output: count,2xx,3xx,4xx,5xx,method,uri,sum,avg,p50,p90,p99,max_body
-        percentiles: [ 50, 90, 99 ]
-        EOF
-        echo "alp.yml created successfully"
-      - |
-        sudo cat << EOF > {{.PPROTEIN_CONFIG_DIR}}/data/slp.yml
-        bundle_values: true
-        bundle_where_in: true
-        filters: Query matches "^(SELECT|INSERT|UPDATE|REPLACE) "
-        limit: 65536
-        output: count,query,sum-query-time,avg-query-time,sum-lock-time,avg-lock-time,sum-rows-sent,avg-rows-sent,sum-rows-examined,avg-rows-examined
-        EOF
-        echo "slp.yml created successfully"
+      - sudo install -Cv -m 0644 ./assets/config/targets.json ./assets/config/alp.yml ./assets/config/slp.yml {{.PPROTEIN_CONFIG_DIR}}/data
     status:
       - test -f {{.PPROTEIN_CONFIG_DIR}}/data/targets.json
       - test -f {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml

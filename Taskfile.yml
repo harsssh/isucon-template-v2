@@ -17,7 +17,7 @@ tasks:
     deps:
       - checkout
     cmds:
-      - task: distribute-config
+      - ./assets/distribute_config.sh
       - task: restart-all
       - task: reload-sysctl
 
@@ -74,11 +74,3 @@ tasks:
   ####################
   #     Internal     #
   ####################
-  distribute-config:
-    internal: true
-    cmds:
-      - |
-        find "{{.USER_WORKING_DIR}}/common" -type f | while read -r src_path; do
-          dst_path="/$(realpath --relative-to={{.USER_WORKING_DIR}}/common $src_path)"
-          sudo cp -a "$src_path" "$dst_path"
-        done
