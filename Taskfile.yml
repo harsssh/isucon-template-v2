@@ -5,6 +5,7 @@ version: "3"
 vars:
   # Frequently changed
   SERVICES: mysql nginx
+  SRC_DIR: "{{.USER_WORKING_DIR}}/app/rust"
 
   # Rarely changed
 
@@ -17,9 +18,16 @@ tasks:
     deps:
       - checkout
     cmds:
+      - task: build
       - ./assets/distribute_config.sh
       - task: restart-all
       - task: reload-sysctl
+
+  build:
+    desc: Build the application
+    dir: "{{.SRC_DIR}}"
+    cmds:
+      - cargo build --release
 
   ####################
   #     Utility      #
