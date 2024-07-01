@@ -27,7 +27,7 @@ tasks:
   install-tools:
     desc: Install all tools
     cmds:
-      - sudo apt-get update && sudo apt-get install -y tree jq graphviz
+      - sudo apt-get update && sudo apt-get install -y tree jq graphviz wget
       - task: install-bottom
       - task: install-pprotein
       - task: install-pprotein-service
@@ -61,7 +61,7 @@ tasks:
     vars:
       COMPLETION_FILE_URL: https://github.com/go-task/task/blob/88b095020e14defcce4645e72f503eb5d880f78d/completion/bash/task.bash
     cmds:
-      - sudo curl -sL -o /etc/bash_completion.d/task.bash {{.COMPLETION_FILE_URL}}
+      - sudo wget -O /etc/bash_completion.d/task.bash {{.COMPLETION_FILE_URL}}
 
   ####################
   #     Utility      #
