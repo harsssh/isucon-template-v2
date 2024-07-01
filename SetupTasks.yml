@@ -4,10 +4,14 @@ version: "3"
 
 vars:
   # Frequently changed
+  WEBAPP_DIR: /home/isucon/webapp
   MANAGED_CONFIG:
     sh: |
       cat << EOF | tr '\n' ' '
-      /etc/mysql /etc/nginx /etc/sysctl.d
+      /home/isucon/env.sh
+      /etc/mysql
+      /etc/nginx
+      /etc/sysctl.d
       $(sudo systemctl show --value -p FragmentPath mysql 2> /dev/null)
       $(sudo systemctl show --value -p FragmentPath nginx 2> /dev/null)
       EOF
@@ -42,6 +46,16 @@ tasks:
             sudo chown -R "$(id -u):$(id -g)" "$target_path"
           fi
         done
+
+  import-webapp:
+    desc: Move webapp directory under the repository
+    cmds:
+      - cp -a "{{.WEBAPP_DIR}}/" {{.USER_WORKING_DIR}}/app
+      - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak"
+      - ln -s {{.USER_WORKING_DIR}}/app "{{.WEBAPP_DIR}}"
+    status:
+      - test -L "{{.WEBAPP_DIR}}"
+      - test -d "{{.WEBAPP_DIR}}"
 
   ####################
   #     Utility      #
