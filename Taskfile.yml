@@ -20,6 +20,7 @@ tasks:
     cmds:
       - task: build
       - ./assets/distribute_config.sh
+      - sudo systemctl daemon-reload
       - task: restart-all
       - task: reload-sysctl
 
@@ -27,7 +28,7 @@ tasks:
     desc: Build the application
     dir: "{{.SRC_DIR}}"
     cmds:
-      - cargo build --release
+      - mold -run cargo build --release
 
   ####################
   #     Utility      #
@@ -69,7 +70,7 @@ tasks:
   restart-all:
     desc: Restart all services related to the application
     cmds:
-      - sudo systemctl restart {{.CLI_ARGS}}
+      - sudo systemctl restart {{.SERVICES}}
 
   reload-sysctl:
     desc: Reload sysctl configuration
