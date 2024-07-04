@@ -54,9 +54,9 @@ tasks:
   import-webapp:
     desc: Move webapp directory under the repository
     cmds:
-      - sudo cp -au "{{.WEBAPP_DIR}}/." {{.USER_WORKING_DIR}}/app
+      - sudo cp -au "{{.WEBAPP_DIR}}/." {{.TASKFILE_DIR}}/app
       - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak"
-      - ln -s {{.USER_WORKING_DIR}}/app "{{.WEBAPP_DIR}}"
+      - ln -s {{.TASKFILE_DIR}}/app "{{.WEBAPP_DIR}}"
       - task: gitignore-large-webapp-files
     status:
       - test -L "{{.WEBAPP_DIR}}"
@@ -88,7 +88,7 @@ tasks:
   taskfile-symlink:
     internal: true
     cmds:
-      - ln -s {{.USER_WORKING_DIR}}/Taskfile.yml ~/Taskfile.yml
+      - ln -s {{.TASKFILE_DIR}}/Taskfile.yml ~/Taskfile.yml
     status:
       - test -L ~/Taskfile.yml
 
@@ -159,7 +159,7 @@ tasks:
 
         [Service]
         ExecStart={{.CMD_INSTALL_DIR}}/pprotein-agent
-        Environment=PPROTEIN_GIT_REPOSITORY={{.USER_WORKING_DIR}}
+        Environment=PPROTEIN_GIT_REPOSITORY={{.TASKFILE_DIR}}
         Restart=always
 
         [Install]
