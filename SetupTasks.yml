@@ -195,6 +195,7 @@ tasks:
   install-bottom-config:
     internal: true
     cmds:
+      - mkdir -p ~/.config/bottom
       - cp ./assets/config/bottom.toml ~/.config/bottom/bottom.toml
     status:
       - diff ./assets/config/bottom.toml ~/.config/bottom/bottom.toml &> /dev/null
