@@ -5,7 +5,8 @@ version: "3"
 vars:
   # Frequently changed
   SERVICES: mysql nginx
-  SRC_DIR: "{{.TASKFILE_DIR}}/app/rust"
+  REPO_DIR: /home/isucon/repo
+  SRC_DIR: /home/isucon/repo/app/rust
 
   # Rarely changed
 
@@ -17,6 +18,7 @@ tasks:
     desc: Deploy the latest configuration
     deps:
       - checkout
+    dir: "{{.REPO_DIR}}"
     cmds:
       - task: build
       - ./assets/distribute_config.sh
@@ -28,13 +30,14 @@ tasks:
     desc: Build the application
     dir: "{{.SRC_DIR}}"
     cmds:
-      - mold -run cargo build --release
+      - cargo build
 
   ####################
   #     Utility      #
   ####################
   checkout:
     desc: Checkout and sync with the latest remote branch
+    dir: "{{.REPO_DIR}}"
     vars:
       BRANCH: '{{.CLI_ARGS | default "main"}}'
     cmds:

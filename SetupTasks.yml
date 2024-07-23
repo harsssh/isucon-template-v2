@@ -4,6 +4,7 @@ version: "3"
 
 vars:
   # Frequently changed
+  REPO_DIR: /home/isucon/repo
   WEBAPP_DIR: /home/isucon/webapp
   COLLECT_TARGET: >-
     /home/isucon/env.sh
@@ -11,6 +12,7 @@ vars:
     /etc/nginx
     /etc/sysctl.d
   COLLECT_TARGET_SERVICE: mysql nginx
+
   # Rarely changed
   CMD_INSTALL_DIR: /usr/local/bin
   PPROTEIN_CONFIG_DIR: /etc/pprotein
@@ -33,7 +35,7 @@ tasks:
   install-tools:
     desc: Install all tools
     cmds:
-      - sudo apt-get -q update && sudo apt-get install -q -y tree jq graphviz wget mold
+      - sudo apt-get -q update && sudo apt-get install -q -y tree jq graphviz wget watch
       - task: install-bottom
       - task: install-bottom-config
       - task: install-pprotein
@@ -54,9 +56,9 @@ tasks:
   import-webapp:
     desc: Move webapp directory under the repository
     cmds:
-      - sudo cp -au "{{.WEBAPP_DIR}}/." {{.TASKFILE_DIR}}/app
+      - sudo cp -au "{{.WEBAPP_DIR}}/." {{.REPO_DIR}}/app
       - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak"
-      - ln -s {{.TASKFILE_DIR}}/app "{{.WEBAPP_DIR}}"
+      - ln -s {{.REPO_DIR}}/app "{{.WEBAPP_DIR}}"
       - task: gitignore-large-webapp-files
     status:
       - test -L "{{.WEBAPP_DIR}}"
@@ -88,7 +90,7 @@ tasks:
   taskfile-symlink:
     internal: true
     cmds:
-      - ln -s {{.TASKFILE_DIR}}/Taskfile.yml ~/Taskfile.yml
+      - ln -s {{.REPO_DIR}}/Taskfile.yml ~/Taskfile.yml
     status:
       - test -L ~/Taskfile.yml
 
@@ -159,7 +161,7 @@ tasks:
 
         [Service]
         ExecStart={{.CMD_INSTALL_DIR}}/pprotein-agent
-        Environment=PPROTEIN_GIT_REPOSITORY={{.TASKFILE_DIR}}
+        Environment=PPROTEIN_GIT_REPOSITORY={{.REPO_DIR}}
         Restart=always
 
         [Install]
