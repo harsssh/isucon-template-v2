@@ -35,7 +35,7 @@ tasks:
   install-tools:
     desc: Install all tools
     cmds:
-      - sudo apt-get -q update && sudo apt-get install -q -y tree jq graphviz wget watch
+      - sudo apt-get -qq update && sudo apt-get install -qq tree jq graphviz wget watch
       - task: install-bottom
       - task: install-bottom-config
       - task: install-pprotein
