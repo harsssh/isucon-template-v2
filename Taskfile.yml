@@ -6,7 +6,7 @@ vars:
   # Frequently changed
   SERVICES: mysql nginx
   REPO_DIR: /home/isucon/repo
-  SRC_DIR: /home/isucon/repo/app/rust
+  SRC_DIR: /home/isucon/repo/app/go
 
   # Rarely changed
 
@@ -30,7 +30,7 @@ tasks:
     desc: Build the application
     dir: "{{.SRC_DIR}}"
     cmds:
-      - cargo build
+      - make
 
   ####################
   #     Utility      #
