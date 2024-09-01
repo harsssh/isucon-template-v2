@@ -83,7 +83,7 @@ tasks:
     cmds:
       - wget -qO go.tar.gz {{.GO_DOWNLOAD_URL}}
       - sudo tar -C {{.GO_INSTALL_DIR}} -xzf go.tar.gz
-      - echo 'export PATH=$PATH:{{.GO_INSTALL_DIR}}/go/bin' >> ~/.bashrc
+      - echo 'export PATH={{.GO_INSTALL_DIR}}/go/bin:$PATH' >> ~/.bashrc
 
   ####################
   #     Utility      #
