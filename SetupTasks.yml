@@ -73,6 +73,18 @@ tasks:
     status:
       - test -f /etc/bash_completion.d/task.bash
 
+  install-go:
+    desc: Install Go
+    vars:
+      GO_VERSION: "1.23.0"
+      GO_DOWNLOAD_URL: https://go.dev/dl/go{{.GO_VERSION}}.linux-amd64.tar.gz
+      GO_INSTALL_DIR: /usr/local
+    dir: /tmp/install-go
+    cmds:
+      - wget -qO go.tar.gz {{.GO_DOWNLOAD_URL}}
+      - sudo tar -C {{.GO_INSTALL_DIR}} -xzf go.tar.gz
+      - echo 'export PATH=$PATH:{{.GO_INSTALL_DIR}}/go/bin' >> ~/.bashrc
+
   ####################
   #     Utility      #
   ####################
