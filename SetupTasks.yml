@@ -146,6 +146,10 @@ tasks:
 
         [Service]
         ExecStart={{.CMD_INSTALL_DIR}}/pprotein
+        Environment=PPROTEIN_GIT_REPOSITORY={{.REPO_DIR}}
+        # 無いと pprof が動かない
+        Environment=HOME=/root
+        # 設定ファイル, ログのスナップショットの保存場所
         WorkingDirectory={{.PPROTEIN_CONFIG_DIR}}
         Restart=always
 
