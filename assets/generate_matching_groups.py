@@ -27,17 +27,16 @@ def extract_route_from_line(line):
     return route
 
 
-def extract_route_from_file(filename):
+def extract_routes(input_stream):
     routes = []
-    with open(filename, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
+    for line in input_stream:
+        line = line.strip()
+        if not line:
+            continue
 
-            route = extract_route_from_line(line)
-            if route is not None:
-                routes.append(route)
+        route = extract_route_from_line(line)
+        if route is not None:
+            routes.append(route)
 
     return routes
 
@@ -86,12 +85,16 @@ def main():
     """
     ソースコードを解析して、alp の matching_groups 用の文字列を出力する
     """
-    if len(sys.argv) != 2:
-        print("Usage: generate_matching_groups.py <filename>")
+    if len(sys.argv) == 2:
+        filename = sys.argv[1]
+        with open(filename, 'r') as f:
+            routes = extract_routes(f)
+    elif len(sys.argv) == 1:
+        routes = extract_routes(sys.stdin)
+    else:
+        print('Usage: python3 generate_matching_groups.py [filename]')
         sys.exit(1)
 
-    filename = sys.argv[1]
-    routes = extract_route_from_file(filename)
     route_regex_list = create_route_regex_list(routes)
     print_as_yaml_list(route_regex_list)
 
