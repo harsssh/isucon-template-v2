@@ -4,8 +4,6 @@ version: "3"
 
 vars:
   # Frequently changed
-  REPO_DIR: /home/isucon/repo
-  WEBAPP_DIR: /home/isucon/webapp
   COLLECT_TARGET: >-
     /home/isucon/env.sh
     /etc/mysql
@@ -14,6 +12,9 @@ vars:
   COLLECT_TARGET_SERVICE: mysql nginx
   #
   # Rarely changed
+  REPO_DIR:
+    sh: find $HOME -name ".git" -type d -maxdepth 2 -exec dirname {} \; | head -1
+  WEBAPP_DIR: $HOME/webapp
   CMD_INSTALL_DIR: /usr/local/bin
   PPROTEIN_CONFIG_DIR: /etc/pprotein
   ALIAS:
