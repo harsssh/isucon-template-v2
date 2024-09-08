@@ -81,7 +81,7 @@ tasks:
     dir: /tmp/install-go
     cmds:
       - if [ -d {{.GO_INSTALL_DIR}} ]; then
-        mv {{.GO_INSTALL_DIR}} {{.GO_INSTALL_DIR}}_backup_$(date +%H%M%S);
+        mv {{.GO_INSTALL_DIR}} {{.GO_INSTALL_DIR}}.bak.$(date +%H%M%S);
         fi
       - wget -qO go.tar.gz {{.GO_DOWNLOAD_URL}}
       - tar -C {{.GO_INSTALL_DIR}} -xzf go.tar.gz
