@@ -7,11 +7,11 @@
 名前は何でもいいが、短い方が楽
 ```bash
 git clone $REPO_URL $REPO_DIR
+cd $REPO_DIR
 ```
 
 go-task をインストール
 ```bash
-cd $REPO_DIR
 assets/install_go_task.sh
 ```
 
@@ -113,7 +113,7 @@ task -t SetupTasks.yml generate-matching-groups
 task deploy
 ```
 
-## Taskfile の使い方
+## Taskfile の補足
 基本的な説明は表示される help を見てください
 ```bash
 task
