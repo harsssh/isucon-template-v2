@@ -29,13 +29,16 @@ def extract_route_from_line(line):
 
 def extract_routes(input_stream):
     routes = []
+    memo = set()
     for line in input_stream:
         line = line.strip()
         if not line:
             continue
 
         route = extract_route_from_line(line)
-        if route is not None:
+        # GET, POST で同じ route があり得る
+        if route is not None and route not in memo:
+            memo.add(route)
             routes.append(route)
 
     return routes
