@@ -27,6 +27,12 @@ tasks:
       - task: import-webapp
       - task: collect-config
 
+  sub:
+    desc: Setup sub server
+    cmds:
+      - task: common
+      - task: webapp-symlink
+
   install-tools:
     desc: Install all tools
     cmds:
@@ -52,8 +58,7 @@ tasks:
     desc: Move webapp directory under the repository
     cmds:
       - sudo cp -au "{{.WEBAPP_DIR}}/." {{.REPO_DIR}}/app
-      - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak.$(date +%H%M%S)"
-      - ln -s {{.REPO_DIR}}/app "{{.WEBAPP_DIR}}"
+      - task: webapp-symlink
       - task: gitignore-large-webapp-files
     status:
       - test -L "{{.WEBAPP_DIR}}"
@@ -114,6 +119,14 @@ tasks:
       - taskfile-symlink
     cmds:
       - task: install-tools
+
+  webapp-symlink:
+    internal: true
+    cmds:
+      - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak.$(date +%H%M%S)"
+      - ln -s {{.REPO_DIR}}/app "{{.WEBAPP_DIR}}"
+    status:
+      - test -L {{.WEBAPP_DIR}}
 
   taskfile-symlink:
     internal: true
