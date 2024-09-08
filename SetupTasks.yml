@@ -78,12 +78,16 @@ tasks:
     vars:
       GO_VERSION: "1.23.0"
       GO_DOWNLOAD_URL: https://go.dev/dl/go{{.GO_VERSION}}.linux-amd64.tar.gz
-      GO_INSTALL_DIR: /usr/local
+      GO_INSTALL_DIR: "$HOME/go"
     dir: /tmp/install-go
     cmds:
+      - if [ -d {{.GO_INSTALL_DIR}} ]; then
+            mv {{.GO_INSTALL_DIR}} {{.GO_INSTALL_DIR}}_backup_$(date +%Y%m%d_%H%M%S);
+        fi
       - wget -qO go.tar.gz {{.GO_DOWNLOAD_URL}}
-      - sudo tar -C {{.GO_INSTALL_DIR}} -xzf go.tar.gz
+      - tar -C {{.GO_INSTALL_DIR}} -xzf go.tar.gz
       - echo 'export PATH={{.GO_INSTALL_DIR}}/go/bin:$PATH' >> ~/.bashrc
+      - echo 'export GOROOT={{.GO_INSTALL_DIR}}' >> ~/.bashrc
 
   ####################
   #     Utility      #
