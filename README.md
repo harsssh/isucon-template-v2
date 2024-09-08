@@ -156,10 +156,15 @@ task status-all
 
 ライブラリ
 
-- https://github.com/jmoiron/sqlx
-- https://jmoiron.github.io/sqlx
-- https://github.com/samber/lo
+- https://github.com/jmoiron/sqlx/
+- https://jmoiron.github.io/sqlx/
+- https://github.com/samber/lo/
+- https://echo.labstack.com/docs/
 
 ミドルウェア
 
-- https://nginx.org/en/docs
+- https://nginx.org/en/docs/
+
+その他
+
+- https://go.dev/play/
