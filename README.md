@@ -157,5 +157,9 @@ task status-all
 ライブラリ
 
 - https://github.com/jmoiron/sqlx
-- https://jmoiron.github.io/sqlx/
+- https://jmoiron.github.io/sqlx
 - https://github.com/samber/lo
+
+ミドルウェア
+
+- https://nginx.org/en/docs
