@@ -113,6 +113,45 @@ task -t SetupTasks.yml generate-matching-groups
 task deploy
 ```
 
+## Taskfile の使い方
+基本的な説明は表示される help を見てください
+```bash
+task
+```
+
+分かりにくそう or 便利なものを補足します
+
+`SetupTasks.yml`
+```bash
+# 競技サーバーに s1, s2, ... の hostname を付けることで,
+# 設定ファイルを追加で読み込むことができるようになります
+task -t SetupTasks.yml hostname -- s1
+
+# 2台目以降のセットアップ用
+task -t SetupTasks.yml sub
+```
+
+`Taskfile.yml`
+```bash
+# origin/my-branch が反映されます
+# 何も指定しない場合は origin/main が反映されます
+task deploy -- my-branch
+
+# service の起動 & 自動起動を有効化
+task enable -- nginx mysql
+
+# service の停止 & 自動起動を無効化
+task disable -- nginx mysql
+
+# 変数に設定したすべての service を再起動
+task restart-all
+
+# 変数に設定したすべての service の状態を表示
+task status-all
+```
+
+`Taskfile.yml` は `~` にシンボリックリンクを置いていて, `alias task="task -g"` を設定しているので, どこからでも利用できます.
+
 ## リンク集
 
 ライブラリ
