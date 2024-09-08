@@ -46,18 +46,20 @@ def extract_routes(input_stream):
 
 def create_route_regex_list(routes):
     route_regex_list = []
+    no_param_routes = [route for route in routes if not contain_params(route)]
     for i, route in enumerate(routes):
         if not contain_params(route):
             continue
 
         route_regex = replace_params(route)
 
-        matching_routes = [(j, r) for j, r in enumerate(routes) if re.match(route_regex, r)]
-        if len(matching_routes) > 1:
-            # /api/users/:user_id と /api/users/:user_id/friends などは区別できない
-            # 後者のパターンを先にマッチさせる
-            for _, preferred_route in filter(lambda t: t[0] != i, matching_routes):
-                route_regex_list.append(f'^{preferred_route}$')
+        # /api/users/:user_id と /api/users/me が区別できない
+        # 後者のパターンを先にマッチさせる
+        for r in no_param_routes:
+            if re.match(route_regex, r):
+                route_regex_list.append(f'^{r}$')
+                # 念の為, 既に追加したものは消す
+                no_param_routes.remove(r)
 
         route_regex_list.append(route_regex)
 
