@@ -101,6 +101,12 @@ tasks:
     status:
       - test "$(hostname)" = "{{.CLI_ARGS}}"
 
+  generate-matching-groups:
+    desc: Generate matching groups for pprotein
+    preconditions:
+      - git grep -lq 'func main()' -- '*.go'
+    cmd: ./assets/generate_matching_groups.py < $(git grep -l 'func main()' -- '*.go' | head -1)
+
   ####################
   #     Internal     #
   ####################
