@@ -56,7 +56,7 @@ tasks:
     desc: Move webapp directory under the repository
     cmds:
       - sudo cp -au "{{.WEBAPP_DIR}}/." {{.REPO_DIR}}/app
-      - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak"
+      - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak.$(date +%H%M%S)"
       - ln -s {{.REPO_DIR}}/app "{{.WEBAPP_DIR}}"
       - task: gitignore-large-webapp-files
     status:
