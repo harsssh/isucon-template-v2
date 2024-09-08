@@ -11,3 +11,7 @@ for config_path in "$@"; do
 		fi
 	fi
 done
+
+# NOTE: これで良いかは要検討
+# permission denied を避けるため
+sudo chown -R "$(whoami)" common/
