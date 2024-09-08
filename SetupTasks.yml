@@ -12,9 +12,20 @@ vars:
     /etc/nginx
     /etc/sysctl.d
   COLLECT_TARGET_SERVICE: mysql nginx
+  #
   # Rarely changed
   CMD_INSTALL_DIR: /usr/local/bin
   PPROTEIN_CONFIG_DIR: /etc/pprotein
+  ALIAS:
+    # SHOULD be double quoted, not single quoted
+    - task="task -g"
+    - deploy="task deploy"
+    - d="task deploy"
+    - sc="sudo systemctl"
+    - scs="sudo systemctl status"
+    - jc="journalctl"
+    - jcf="journalctl -f"
+    - jcfu="journalctl -f -u"
 
 tasks:
   ####################
@@ -117,8 +128,19 @@ tasks:
       - enable-autocompletion
       - gitconfig
       - taskfile-symlink
+      - register-alias
     cmds:
       - task: install-tools
+
+  register-alias:
+    internal: true
+    cmds:
+      - echo '### INSERTED BY register-alias ###' >> ~/.bashrc
+      - for:
+          var: ALIAS
+        cmd: echo 'alias {{.ITEM}}' >> ~/.bashrc
+    status:
+      - grep -q '### INSERTED BY register-alias ###' ~/.bashrc
 
   webapp-symlink:
     internal: true
