@@ -22,12 +22,8 @@ tasks:
   ####################
   all:
     desc: Run all setup tasks
-    deps:
-      - enable-autocompletion
-      - gitconfig
-      - taskfile-symlink
     cmds:
-      - task: install-tools
+      - task: common
       - task: import-webapp
       - task: collect-config
 
@@ -110,6 +106,15 @@ tasks:
   ####################
   #     Internal     #
   ####################
+  common:
+    internal: true
+    deps:
+      - enable-autocompletion
+      - gitconfig
+      - taskfile-symlink
+    cmds:
+      - task: install-tools
+
   taskfile-symlink:
     internal: true
     cmds:
