@@ -76,7 +76,7 @@ tasks:
       - test -d "{{.WEBAPP_DIR}}"
       - test -z "$(ls {{.WEBAPP_DIR}})"
     cmds:
-      - rm -r {{.REPO_DIR}}/app
+      - rm -rf {{.REPO_DIR}}/app
       - mv "{{.WEBAPP_DIR}}" {{.REPO_DIR}}/app
       - task: webapp-symlink
       - task: gitignore-large-webapp-files
