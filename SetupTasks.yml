@@ -4,6 +4,7 @@ version: "3"
 
 vars:
   # Frequently changed
+  # TODO: UPDATE ME
   COLLECT_TARGET: >-
     /home/isucon/env.sh
     /etc/mysql
