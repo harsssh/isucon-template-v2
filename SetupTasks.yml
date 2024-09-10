@@ -27,6 +27,9 @@ vars:
     - jc="journalctl"
     - jcf="journalctl -f"
     - jcfu="journalctl -f -u"
+    - rm="rm -i"
+    - mkdir="mkdir -p"
+    - dc="docker compose"
 
 tasks:
   ####################
