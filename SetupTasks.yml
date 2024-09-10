@@ -68,13 +68,16 @@ tasks:
 
   import-webapp:
     desc: Move webapp directory under the repository
+    preconditions:
+      - test -d "{{.WEBAPP_DIR}}"
+      - test -z "$(ls {{.WEBAPP_DIR}})"
     cmds:
-      - sudo cp -au "{{.WEBAPP_DIR}}/." {{.REPO_DIR}}/app
+      - rm -r {{.REPO_DIR}}/app
+      - mv "{{.WEBAPP_DIR}}" {{.REPO_DIR}}/app
       - task: webapp-symlink
       - task: gitignore-large-webapp-files
     status:
       - test -L "{{.WEBAPP_DIR}}"
-      - test -d "{{.WEBAPP_DIR}}"
 
   enable-autocompletion:
     desc: Enable autocompletion for task command
@@ -147,8 +150,13 @@ tasks:
 
   webapp-symlink:
     internal: true
+    preconditions:
+      - test -d "{{.REPO_DIR}}/app"
+      - ! test -z "$(ls {{.REPO_DIR}}/app)"
     cmds:
-      - mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak.$(date +%H%M%S)"
+      - if [ -d "{{.WEBAPP_DIR}}" ]; then
+        mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak.$(date +%H%M%S)";
+        fi
       - ln -s {{.REPO_DIR}}/app "{{.WEBAPP_DIR}}"
     status:
       - test -L {{.WEBAPP_DIR}}
