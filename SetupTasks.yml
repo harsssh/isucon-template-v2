@@ -14,7 +14,7 @@ vars:
   #
   # Rarely changed
   REPO_DIR:
-    sh: find $HOME -name ".git" -type d -maxdepth 2 -exec dirname {} \; | head -1
+    sh: find $HOME -maxdepth 2 -name "SetupTasks.yml" -type f -exec dirname {} \; | head -1
   WEBAPP_DIR: $HOME/webapp
   CMD_INSTALL_DIR: /usr/local/bin
   PPROTEIN_CONFIG_DIR: /etc/pprotein
@@ -74,7 +74,7 @@ tasks:
     desc: Move webapp directory under the repository
     preconditions:
       - test -d "{{.WEBAPP_DIR}}"
-      - test -z "$(ls {{.WEBAPP_DIR}})"
+      - test -z "$(ls {{.REPO_DIR}}/app)"
     cmds:
       - rm -rf {{.REPO_DIR}}/app
       - mv "{{.WEBAPP_DIR}}" {{.REPO_DIR}}/app
@@ -280,6 +280,6 @@ tasks:
     internal: true
     cmds:
       - mkdir -p ~/.config/bottom
-      - cp ./assets/config/bottom.toml ~/.config/bottom/bottom.toml
+      - cp {{.REPO_DIR}}/assets/config/bottom.toml ~/.config/bottom/bottom.toml
     status:
-      - diff ./assets/config/bottom.toml ~/.config/bottom/bottom.toml &> /dev/null
+      - diff {{.REPO_DIR}}/assets/config/bottom.toml ~/.config/bottom/bottom.toml &> /dev/null
