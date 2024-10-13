@@ -156,7 +156,7 @@ tasks:
     internal: true
     preconditions:
       - test -d "{{.REPO_DIR}}/app"
-      - ! test -z "$(ls {{.REPO_DIR}}/app)"
+      - test -n "$(ls {{.REPO_DIR}}/app)"
     cmds:
       - if [ -d "{{.WEBAPP_DIR}}" ]; then
         mv "{{.WEBAPP_DIR}}" "{{.WEBAPP_DIR}}.bak.$(date +%H%M%S)";
