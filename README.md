@@ -1,5 +1,39 @@
 # isucon-template-v2
 
+## 練習環境の準備
+https://github.com/matsuu/aws-isucon
+
+上記リポジトリに記載の AMI からインスタンスを起動。
+以下のユーザーデータを設定すると便利。
+```bash
+#!/bin/bash -ex
+
+# スペース区切り
+USERS="harsssh"
+
+for user in $USERS; do
+    sudo -u isucon mkdir -p /home/isucon/.ssh
+    sudo -u isucon chmod 700 /home/isucon/.ssh
+    curl "https://github.com/${user}.keys" | sudo -u isucon tee -a /home/isucon/.ssh/authorized_keys
+    sudo -u isucon chmod 600 /home/isucon/.ssh/authorized_keys
+done
+```
+
+ローカルの `~/.ssh/config` に以下を設定。
+```
+Host isu
+    Hostname xxx.xxx.xxx.xxx
+    User isucon
+    ForwardAgent yes
+    # For pprotein
+    LocalForward 9000 localhost:9000
+
+Host bench
+    Hostname yyy.yyy.yyy.yyy 
+    User isucon
+    ForwardAgent yes
+```
+
 ## 初回計測までの手順
 
 ### ソースコードの push まで
@@ -15,8 +49,7 @@ go-task をインストール
 assets/install_go_task.sh
 ```
 
-`SetupTasks.yml` を実行.
-実行前に "Frequently changed" の部分を確認してください.
+"Frequently changed" の部分を編集してから, `SetupTasks.yml` を実行.
 ```bash
 task -t SetupTasks.yml all
 source ~/.bashrc  # alias を読み込む
