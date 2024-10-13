@@ -9,7 +9,7 @@ vars:
 
   # Rarely changed
   REPO_DIR:
-    sh: find $HOME -name ".git" -type d -maxdepth 2 -exec dirname {} \; | head -1
+    sh: find $HOME -maxdepth 2 -name "SetupTasks.yml" -type f -exec dirname {} \; | head -1
   SRC_DIR: "{{.REPO_DIR}}/app/go"
 
 tasks:
