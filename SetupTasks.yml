@@ -86,11 +86,12 @@ tasks:
   enable-autocompletion:
     desc: Enable autocompletion for task command
     vars:
-      COMPLETION_FILE_URL: https://raw.githubusercontent.com/go-task/task/main/completion/bash/task.bash
+      MARKER: "### INSERTED BY enable-autocompletion ###"
     cmds:
-      - sudo wget -qO /etc/bash_completion.d/task.bash {{.COMPLETION_FILE_URL}}
+      - echo "{{.MARKER}}" >> ~/.bashrc
+      - echo 'eval "$(task --completion bash)"' >> ~/.bashrc
     status:
-      - test -f /etc/bash_completion.d/task.bash
+      - grep -q "{{.MARKER}}" ~/.bashrc
 
   install-go:
     desc: Install Go
