@@ -81,7 +81,7 @@ tasks:
       - rm -rf {{.REPO_DIR}}/app
       - mv "{{.WEBAPP_DIR}}" {{.REPO_DIR}}/app
       - task: webapp-symlink
-      - task: gitignore-large-webapp-files
+      - task: auto-gitignore
     status:
       - test -L "{{.WEBAPP_DIR}}"
 
@@ -188,11 +188,21 @@ tasks:
       - git config --global --get user.email
       - git config --global --get core.editor
 
-  gitignore-large-webapp-files:
+  auto-gitignore:
     internal: true
     dir: ./app
     cmds:
       - find . -type f -size +100M 2> /dev/null >> .gitignore
+      - |
+        cat < 'EOF' >> .gitignore
+        perl
+        php
+        python
+        ruby
+        rust
+        node
+        nodejs
+        EOF
 
   install-pprotein:
     internal: true
