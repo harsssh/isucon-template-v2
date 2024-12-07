@@ -264,6 +264,7 @@ tasks:
         WantedBy=multi-user.target
         EOF
       - sudo systemctl daemon-reload
+      - sudo systemctl enable --now pprotein-agent
     status:
       - test -f /etc/systemd/system/pprotein.service
       - test -f /etc/systemd/system/pprotein-agent.service
