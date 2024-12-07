@@ -95,7 +95,7 @@ tasks:
   install-go:
     desc: Install Go
     vars:
-      GO_VERSION: "1.23.0"
+      GO_VERSION: "1.23.4"
       GO_DOWNLOAD_URL: https://go.dev/dl/go{{.GO_VERSION}}.linux-amd64.tar.gz
       GO_INSTALL_DIR: "$HOME/go"
     dir: /tmp/install-go
@@ -194,7 +194,7 @@ tasks:
   install-pprotein:
     internal: true
     vars:
-      PPROTEIN_VERSION: "1.2.3"
+      PPROTEIN_VERSION: "1.2.4"
       ALP_VERSION: "1.0.21"
       SLP_VERSION: "0.2.1"
       PPROTEIN_DOWNLOAD_URL: https://github.com/kaz/pprotein/releases/download/v{{.PPROTEIN_VERSION}}/pprotein_{{.PPROTEIN_VERSION}}_linux_amd64.tar.gz
@@ -268,7 +268,7 @@ tasks:
   install-bottom:
     internal: true
     vars:
-      BOTTOM_VERSION: "0.9.6"
+      BOTTOM_VERSION: "0.10.2"
       BOTTOM_DOWNLOAD_URL: https://github.com/ClementTsang/bottom/releases/download/{{.BOTTOM_VERSION}}/bottom_{{.BOTTOM_VERSION}}_amd64.deb
     dir: /tmp
     cmds:
