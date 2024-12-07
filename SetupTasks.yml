@@ -31,6 +31,8 @@ vars:
     - rm="rm -i"
     - mkdir="mkdir -p"
     - dc="docker compose"
+    - g="git"
+    - b="btm"
 
 tasks:
   ####################
