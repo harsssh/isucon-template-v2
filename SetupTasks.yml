@@ -265,11 +265,12 @@ tasks:
       - test -f {{.PPROTEIN_CONFIG_DIR}}/data/alp.yml
       - test -f {{.PPROTEIN_CONFIG_DIR}}/data/slp.yml
 
+  # 最近のものは x.x.x-1 の形式になってるので注意
   install-bottom:
     internal: true
     vars:
       BOTTOM_VERSION: "0.10.2"
-      BOTTOM_DOWNLOAD_URL: https://github.com/ClementTsang/bottom/releases/download/{{.BOTTOM_VERSION}}/bottom_{{.BOTTOM_VERSION}}_amd64.deb
+      BOTTOM_DOWNLOAD_URL: https://github.com/ClementTsang/bottom/releases/download/{{.BOTTOM_VERSION}}/bottom_{{.BOTTOM_VERSION}}-1_amd64.deb
     dir: /tmp
     cmds:
       - wget -qO bottom.deb {{.BOTTOM_DOWNLOAD_URL}}
