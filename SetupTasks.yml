@@ -106,7 +106,6 @@ tasks:
       - wget -qO go.tar.gz {{.GO_DOWNLOAD_URL}}
       - tar -C "$(dirname {{.GO_INSTALL_DIR}})" -xzf go.tar.gz
       - echo 'export PATH={{.GO_INSTALL_DIR}}/bin:$PATH' >> ~/.bashrc
-      - echo 'export GOROOT={{.GO_INSTALL_DIR}}' >> ~/.bashrc
       - echo 'export GOPATH={{.GO_INSTALL_DIR}}' >> ~/.bashrc
     status:
       - go version | grep -q {{.GO_VERSION}}
