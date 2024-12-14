@@ -194,7 +194,7 @@ tasks:
     cmds:
       - find . -type f -size +100M 2> /dev/null >> .gitignore
       - |
-        cat < 'EOF' >> .gitignore
+        cat << 'EOF' >> .gitignore
         perl
         php
         python
