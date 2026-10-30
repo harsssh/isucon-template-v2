@@ -4,6 +4,20 @@
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
+# EC2 では cloud-init が起動のたびに hostname を戻すので、再起動試験の後に別ホストの設定が配布されてしまう
+- name: Check cloud-init config directory
+  ansible.builtin.stat:
+    path: /etc/cloud/cloud.cfg.d
+  register: base_cloud_cfg_d
+
+- name: Keep hostname after reboot
+  when: base_cloud_cfg_d.stat.exists
+  become: true
+  ansible.builtin.copy:
+    content: "preserve_hostname: true\n"
+    dest: /etc/cloud/cloud.cfg.d/99-preserve-hostname.cfg
+    mode: "0644"
+
 - name: Resolve hostname locally
   become: true
   ansible.builtin.lineinfile:
@@ -13,7 +27,7 @@
 - name: Install apt packages
   become: true
   ansible.builtin.apt:
-    name: [git, tree, jq, graphviz, wget, watch]
+    name: [git, rsync, tree, jq, graphviz, wget, watch]
     update_cache: true
     cache_valid_time: 3600
     # 起動直後は unattended-upgrades が apt のロックを持っていることがある

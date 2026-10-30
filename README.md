@@ -42,26 +42,27 @@ Host bench
 
 ### セットアップ
 
-手元のリポジトリで実行する。Ansible は Nix の devShell に入っている。
+手元のリポジトリで実行する。Ansible は Nix の devShell に入っていて、`direnv allow` しておくとリポジトリに入ったときに自動で読み込まれる。
+direnv を使わない場合は、各コマンドの前に `nix develop -c` を付ける。
 
 1. `ansible/inventory.yml` の `hosts` を使うサーバーに合わせる
 2. `ansible/group_vars/all.yml` と `Taskfile.yml` の "Frequently changed" を編集して push する
 3. 全サーバーをセットアップする
    ```bash
-   nix develop -c ansible-playbook ansible/setup.yml
+   ansible-playbook ansible/setup.yml
    ```
 4. 手元で `git pull` する (primary の webapp と設定ファイルが push されている)
 
 `setup.yml` が行うこと:
 
-- 全サーバー: hostname の設定、ツール (go-task, bottom, alp, slp, pprotein-agent) と alias のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え
+- 全サーバー: hostname の設定 (再起動後も保持)、ツール (go-task, bottom, alp, slp, pprotein-agent) と alias のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え (git で管理していない大きいファイルなどは既存の `~/webapp` からコピー)
 - primary (`inventory.yml` の `primary`): `~/webapp` と `/etc` の設定ファイルのリポジトリへの取り込みと push、nginx の LTSV ログと MySQL の slow log の設定、pprotein の起動
 
 何度実行しても同じ状態になるので、途中で失敗したら原因を直して再実行すればよい。
 
 Go が古すぎる (1.21 未満) 場合は新しくインストールする。
 ```bash
-nix develop -c ansible-playbook ansible/setup.yml --tags go
+ansible-playbook ansible/setup.yml --tags go
 ```
 
 ### pprotein の設定

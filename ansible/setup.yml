@@ -31,11 +31,12 @@
     - name: Commit and push imported files
       ansible.builtin.shell: |
         set -e
-        git add -A
-        if git diff --cached --quiet; then
+        # 取り込み済みなら何もしない。競技中の再実行で、サーバー上の編集を push しないため
+        if [ -n "$(git ls-files -- app common ':!app/.gitkeep')" ]; then
           echo "nothing to commit"
           exit 0
         fi
+        git add app common
         git commit -q -m "import webapp and config from {{ inventory_hostname }}"
         git push -q origin HEAD
       args:

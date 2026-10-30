@@ -21,13 +21,25 @@
     - not repo_webapp.stat.islnk
   ansible.builtin.import_tasks: import_webapp.yml
 
-- name: Back up webapp directory
+- name: Replace webapp directory with repository
   when:
     - inventory_hostname not in groups.primary
     - repo_webapp.stat.exists
     - not repo_webapp.stat.islnk
-  ansible.builtin.command: mv {{ webapp_dir }} {{ webapp_dir }}.bak.{{ ansible_facts.date_time.epoch }}
-  changed_when: true
+  block:
+    # 大きいファイルなど git で管理していないファイルを、既存の webapp から補う
+    - name: Copy files not in repository
+      # サーバー上でコピーするため、自分自身に delegate する
+      delegate_to: "{{ inventory_hostname }}"
+      ansible.posix.synchronize:
+        src: "{{ webapp_dir }}/"
+        dest: "{{ repo_dir }}/app/"
+        archive: true
+        rsync_opts: [--ignore-existing]
+
+    - name: Back up webapp directory
+      ansible.builtin.command: mv {{ webapp_dir }} {{ webapp_dir }}.bak.{{ ansible_facts.date_time.epoch }}
+      changed_when: true
 
 - name: Link webapp to repository
   ansible.builtin.file:
