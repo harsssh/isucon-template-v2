@@ -1,6 +1,14 @@
 import re
 
 
+def cgroup_search_paths(control_group):
+    """unit の cgroup を探すパスを返す。空やルートはホスト全体を指すため検索しない"""
+    if not control_group or control_group == '/':
+        return []
+    return [root + control_group for root in
+            ['/sys/fs/cgroup', '/sys/fs/cgroup/unified', '/sys/fs/cgroup/systemd']]
+
+
 def _parse_systemctl_show(systemctl_show_output):
     """`systemctl show <unit>...` の出力を、unit ごとのプロパティの dict のリストにする"""
     return [
@@ -71,6 +79,7 @@ def listening_port(ss_output, pids):
 class FilterModule:
     def filters(self):
         return {
+            'cgroup_search_paths': cgroup_search_paths,
             'services_in_directory': services_in_directory,
             'loaded_services': loaded_services,
             'exec_start_path': exec_start_path,

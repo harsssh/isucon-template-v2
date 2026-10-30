@@ -1,6 +1,7 @@
-.PHONY: survey setup deploy lint test
+.PHONY: survey setup deploy deploy-history lint test
 
 BRANCH ?= main
+export BRANCH
 
 # サーバーの状態を survey/ に書き出し、ansible の前提と合わない点を表示する。サーバーは変更しない
 survey:
@@ -12,7 +13,10 @@ setup:
 
 # origin の $(BRANCH) を全サーバーにデプロイする
 deploy:
-	ansible-playbook ansible/deploy.yml -e branch=$(BRANCH)
+	ruby ansible/deploy_history.rb deploy
+
+deploy-history:
+	ruby ansible/deploy_history.rb list
 
 lint:
 	ansible-lint ansible/

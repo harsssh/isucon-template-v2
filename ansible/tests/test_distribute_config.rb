@@ -67,4 +67,51 @@ class TestDistributeConfig < Minitest::Test
 
     assert_equal ["#{@root}/etc/mysql/my.cnf"], distribute
   end
+
+  def test_copies_relative_symlinks_and_reports_no_change_on_retry
+    write("#{@repo}/common/etc/nginx/sites-available/demo", 'server {}')
+    FileUtils.mkdir_p("#{@repo}/common/etc/nginx/sites-enabled")
+    File.symlink('../sites-available/demo', "#{@repo}/common/etc/nginx/sites-enabled/demo")
+
+    changed = distribute
+
+    assert_includes changed, "#{@root}/etc/nginx/sites-enabled/demo"
+    assert_equal '../sites-available/demo', File.readlink("#{@root}/etc/nginx/sites-enabled/demo")
+    assert_equal 'server {}', File.read("#{@root}/etc/nginx/sites-enabled/demo")
+    assert_equal [], distribute
+  end
+
+  def test_host_symlink_overrides_common_file_and_preserves_absolute_target
+    write("#{@repo}/common/etc/nginx/demo", 'common')
+    distribute
+    FileUtils.mkdir_p("#{@repo}/s1/etc/nginx")
+    File.symlink('/etc/nginx/missing', "#{@repo}/s1/etc/nginx/demo")
+
+    assert_equal ["#{@root}/etc/nginx/demo"], distribute
+    assert_equal '/etc/nginx/missing', File.readlink("#{@root}/etc/nginx/demo")
+    assert_equal [], distribute
+  end
+
+  def test_changes_symlink_target
+    FileUtils.mkdir_p("#{@repo}/common/etc/nginx")
+    File.symlink('first', "#{@repo}/common/etc/nginx/demo")
+    distribute
+    File.unlink("#{@repo}/common/etc/nginx/demo")
+    File.symlink('second', "#{@repo}/common/etc/nginx/demo")
+
+    assert_equal ["#{@root}/etc/nginx/demo"], distribute
+    assert_equal 'second', File.readlink("#{@root}/etc/nginx/demo")
+  end
+
+  def test_file_replaces_symlink_without_overwriting_its_target
+    write("#{@repo}/common/etc/nginx/demo", 'same')
+    write("#{@root}/original", 'same')
+    FileUtils.mkdir_p("#{@root}/etc/nginx")
+    File.symlink("#{@root}/original", "#{@root}/etc/nginx/demo")
+
+    assert_equal ["#{@root}/etc/nginx/demo"], distribute
+    refute File.symlink?("#{@root}/etc/nginx/demo")
+    assert_equal 'same', File.read("#{@root}/etc/nginx/demo")
+    assert_equal 'same', File.read("#{@root}/original")
+  end
 end

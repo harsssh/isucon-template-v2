@@ -4,3 +4,4 @@
 __pycache__
 .ansible
 .direnv
+.deploy-history/

@@ -69,6 +69,7 @@ PR のタイトルは変更の内容を 1 行で書く。本文は時間とト�
 Ansible などは Nix の devShell にあり、direnv で読み込まれる。読み込まれていなければ `nix develop -c` を付ける。
 
 - `make deploy [BRANCH=...]`: デプロイ
+- `make deploy-history`: 直近 20 回のデプロイ履歴を表示
 - `make survey`: サーバーの状態を `survey/` に書き出し、ansible の前提と合わない点を表示する。サーバーは変更しない
 - `make setup`: 初回セットアップ。何度実行しても同じ状態になる
 - `make test`: `ansible/` のスクリプトとフィルターのテスト
@@ -82,6 +83,19 @@ Ansible などは Nix の devShell にあり、direnv で読み込まれる。�
 - 設定ファイル: `config/common/` とホスト名のディレクトリを配り、変わったファイルに対応するサービスだけを再起動する。unit ファイルが変わったら daemon-reload、`/etc/sysctl*` が変わったら `sysctl --system` を実行する
 - 配布はファイルの上書きだけで、`config/common/` から消したファイルはサーバーに残る。消すときはサーバー上でも消す
 - `/var/log/nginx/access.log` と `/var/log/mysql/mysql-slow.log` を空にする
+
+## デプロイ前後の確認
+
+- サービスを再起動する前に、nginx を動かすホストで `nginx -t` を実行する。失敗したら全ホストのデプロイを止める
+- 起動後はアプリの `/` を確認し、失敗時は再試行する。既定では HTTP 200 から 499 を成功とする。ヘルスチェック用のパスがある場合は、`ansible/group_vars/all.yml` の `app_healthcheck_path` と `app_healthcheck_status_codes` を変更する
+- 疎通確認に失敗した場合も未完了の印を残す。原因を直してデプロイを再実行し、設定を再反映する
+
+## デプロイ履歴
+
+- `make deploy` は手元の `.deploy-history/` に 1 回につき JSON ファイルを 1 つ残す。Git の管理対象には含めない
+- 開始・終了時刻、指定ブランチ、ホストごとの配備済み SHA とサービス配置、成否、失敗したタスク名を記録する。手元のコミット SHA と未コミット変更の有無も残す
+- 強制終了などで終了処理が動かなかった記録は `running` のまま残る。現在もデプロイが動いているとは限らない
+- 履歴を残すため、通常のデプロイは `ansible-playbook` の直接実行ではなく `make deploy` を使う
 
 ## 複数台構成
 

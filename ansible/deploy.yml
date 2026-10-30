@@ -3,8 +3,10 @@
 - name: Deploy
   hosts: all
   gather_facts: false
+  any_errors_fatal: true
   vars:
     branch: main
+    deploy_pending_path: "{{ repo_dir }}.deploy-pending"
     # 配布で設定ファイルが変わったときに再起動するサービスと、その設定ファイルのディレクトリ
     # unit ファイル (<サービス名>.service) とその drop-in が変わったときも再起動する
     service_config_dirs: "{{ {'nginx': ['/etc/nginx/'], db_service: ['/etc/mysql/'], 'memcached': ['/etc/memcached.conf']} }}"
@@ -32,6 +34,17 @@
         version: "{{ branch }}"
         force: true
         accept_newhostkey: true
+      register: deployed_revision
+
+    - name: Record deployed revision and service placement
+      ansible.builtin.set_stats:
+        per_host: true
+        aggregate: false
+        data:
+          deployment:
+            sha: "{{ deployed_revision.after }}"
+            services: "{{ host_services }}"
+            status: running
 
     # Go などの PATH は ~/.bashrc で設定されているので、対話シェルとして読み込む
     - name: Build application
@@ -40,6 +53,20 @@
       args:
         chdir: "{{ app_dir }}"
       changed_when: true
+
+    - name: Check for interrupted deployment
+      become: true
+      ansible.builtin.stat:
+        path: "{{ deploy_pending_path }}"
+      register: deploy_pending
+
+    # コピー後に失敗しても、次回は変更の有無によらず設定を反映し直す
+    - name: Mark deployment as pending
+      become: true
+      ansible.builtin.copy:
+        content: "pending\n"
+        dest: "{{ deploy_pending_path }}"
+        mode: "0600"
 
     # スクリプトは手元から送るので、サーバー上の checkout の状態によらない
     - name: Distribute config files
@@ -52,7 +79,13 @@
 
     - name: Decide actions from changed config files
       ansible.builtin.set_fact:
-        deploy_plan: "{{ distributed_config.stdout_lines | deploy_actions(host_services, app_service, service_config_dirs) }}"
+        deploy_plan: "{{ distributed_config.stdout_lines | deploy_actions(host_services, app_service, service_config_dirs, deploy_pending.stat.exists) }}"
+
+    - name: Validate nginx config before restarting services
+      when: "'nginx' in host_services"
+      become: true
+      ansible.builtin.command: nginx -t
+      changed_when: false
 
     - name: Reload systemd
       when: deploy_plan.daemon_reload
@@ -97,9 +130,43 @@
         argv: "{{ ['truncate', '-c', '-s', '0'] + rotated_logs }}"
       changed_when: true
 
+    - name: Refresh service facts after starting application
+      ansible.builtin.import_tasks: tasks/find_services.yml
+
+    - name: Wait for application HTTP response
+      ansible.builtin.uri:
+        url: "{{ item.url }}"
+        status_code: "{{ item.status_codes }}"
+        follow_redirects: none
+        use_proxy: false
+        timeout: 3
+      loop: >-
+        {{ host_services | deploy_http_checks(app_service, app_port | default(none),
+           app_healthcheck_path, app_healthcheck_status_codes) }}
+      loop_control:
+        label: "{{ item.url }}"
+      register: deploy_http_result
+      until: deploy_http_result is succeeded
+      retries: 15
+      delay: 2
+
     # サービスの配置の変更を pprotein の取得先に反映する。alp.yml, slp.yml は config/common/ として上で配っている
     - name: Update pprotein config
       when: inventory_hostname in groups.pprotein_server
       ansible.builtin.include_role:
         name: pprotein
         tasks_from: config
+
+    - name: Mark deployment as complete
+      become: true
+      ansible.builtin.file:
+        path: "{{ deploy_pending_path }}"
+        state: absent
+
+    - name: Record successful deployment
+      ansible.builtin.set_stats:
+        per_host: true
+        aggregate: false
+        data:
+          deployment:
+            status: succeeded

@@ -2,6 +2,7 @@
 import unittest
 
 from app_service import (
+    cgroup_search_paths,
     environment_file_paths,
     exec_start_path,
     listening_port,
@@ -20,6 +21,20 @@ Id=isupipe-python.service
 WorkingDirectory=/
 Id=isupipe-dns.service
 """
+
+
+class TestCgroupSearchPaths(unittest.TestCase):
+    def test_searches_only_the_application_cgroup(self):
+        self.assertEqual(cgroup_search_paths('/system.slice/app.service'), [
+            '/sys/fs/cgroup/system.slice/app.service',
+            '/sys/fs/cgroup/unified/system.slice/app.service',
+            '/sys/fs/cgroup/systemd/system.slice/app.service',
+        ])
+
+    def test_does_not_search_the_host_when_cgroup_is_empty_or_root(self):
+        for value in ['', '/', None]:
+            with self.subTest(control_group=value):
+                self.assertEqual(cgroup_search_paths(value), [])
 
 
 class TestServicesInDirectory(unittest.TestCase):

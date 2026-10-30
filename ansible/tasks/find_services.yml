@@ -63,14 +63,12 @@
     # ExecStart がシェルなどのラッパーで、子プロセスが listen することもあるので、unit の cgroup の全プロセスを見る
     - name: Show processes of application
       ansible.builtin.shell: |
-        for root in /sys/fs/cgroup /sys/fs/cgroup/unified /sys/fs/cgroup/systemd; do
-          if [ -d "$root$CONTROL_GROUP" ]; then
-            find "$root$CONTROL_GROUP" -name cgroup.procs -exec cat {} +
+        for cgroup_path in {{ find_services_app_unit.status.ControlGroup | default('') | cgroup_search_paths | map('quote') | join(' ') }}; do
+          if [ -d "$cgroup_path" ]; then
+            find "$cgroup_path" -name cgroup.procs -exec cat {} +
             break
           fi
         done
-      environment:
-        CONTROL_GROUP: "{{ find_services_app_unit.status.ControlGroup }}"
       register: find_services_app_pids
       changed_when: false
 

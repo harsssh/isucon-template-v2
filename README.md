@@ -117,6 +117,9 @@ make deploy BRANCH=my-branch
 4. サービスを再起動する。アプリ (WorkingDirectory が `~/webapp/go` のサービス) は毎回、nginx や MySQL は設定ファイルか unit ファイルが変わったときだけ再起動する
 5. access.log と slow log を空にする
 
+設定配布の開始後に失敗した場合は、同じコマンドを再実行する。未完了の印が残っているホストでは、設定ファイルが変更済みでも systemd と sysctl の再読込、および割り当てた全サービスの再起動をやり直す。
+設定ファイルのシンボリックリンクは、リンク先の文字列を保持して配布する。
+
 サービスの配置は `ansible/inventory.yml` の `host_services` で変える。他のホストに割り当てたサービスは、デプロイ時に停止して自動起動を無効にする。
 
 ```yaml
@@ -139,6 +142,7 @@ Go 以外の実装を使うときやアプリのサービスが見つからな�
 | `make deploy [BRANCH=...]` | 全サーバーへのデプロイ |
 | `make lint` | ansible-lint |
 | `make test` | スクリプトとフィルターのテスト |
+| `nix flake check` | Nix の隔離された環境でテストと lint を実行 |
 
 サーバー上では alias (`sc`, `scs`, `jcfu` など) で systemctl と journalctl を操作する。
 

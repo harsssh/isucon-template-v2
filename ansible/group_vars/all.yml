@@ -11,6 +11,11 @@ host_services:
 app_dir: "{{ webapp_dir }}/go"
 # app_service: isucon-go
 
+# API 専用のアプリは / が 404 でも正常なので、既定では HTTP 応答の有無を確認する。
+# ヘルスチェック用のパスがある場合は、パスと正常時のステータスを指定する。
+app_healthcheck_path: /
+app_healthcheck_status_codes: "{{ range(200, 500) | list }}"
+
 # 以下は通常変えない
 # サーバーに ssh するユーザー。ISUCON のサーバーは isucon
 ansible_user: isucon
