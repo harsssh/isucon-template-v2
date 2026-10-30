@@ -34,12 +34,11 @@ Host bench
 direnv を使わない場合は、各コマンドの前に `nix develop -c` を付ける。
 
 1. `ansible/inventory.yml` の `hosts` を使うサーバーに合わせる
-2. `ansible/group_vars/all.yml` の "Frequently changed" を編集して push する
-3. 全サーバーをセットアップする
+2. 全サーバーをセットアップする
    ```bash
    make setup
    ```
-4. 手元で `git pull` する (primary の webapp と設定ファイルが push されている)
+3. 手元で `git pull` する (primary の webapp と設定ファイルが push されている)
 
 `setup.yml` が行うこと:
 
@@ -101,19 +100,21 @@ make deploy BRANCH=my-branch
 `deploy.yml` は各サーバーで以下を行う。
 
 1. origin のブランチを checkout する (サーバー上の変更は捨てる)
-2. アプリを割り当てたホストで `app_service` をビルドする (`build_dir` で `make`)
+2. アプリを割り当てたホストでアプリをビルドする (`~/webapp/go` で `make`)
 3. `common/` とホスト名のディレクトリ (`s1/` など) の設定ファイルを配布する。同じパスのファイルはホスト名のディレクトリを優先する
-4. サービスを再起動する。アプリは毎回、nginx や MySQL は設定ファイルか unit ファイルが変わったときだけ再起動する
+4. サービスを再起動する。アプリ (WorkingDirectory が `~/webapp/go` のサービス) は毎回、nginx や MySQL は設定ファイルか unit ファイルが変わったときだけ再起動する
 5. access.log と slow log を空にする
 
 サービスの配置は `ansible/inventory.yml` の `services` で変える。他のホストに割り当てたサービスは、デプロイ時に停止して自動起動を無効にする。
 
 ```yaml
 s1:
-  services: [nginx, isucon-go]
+  services: [nginx, "{{ app_service }}"]
 s2:
   services: [mysql]
 ```
+
+Go 以外の実装を使うときやアプリのサービスが見つからないときは、`ansible/group_vars/all.yml` の `app_dir` と `app_service` を変える。
 
 ## Makefile
 

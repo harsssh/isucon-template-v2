@@ -10,9 +10,9 @@
   loop:
     - url: "https://github.com/kaz/pprotein/releases/download/v{{ pprotein_version }}/pprotein_{{ pprotein_version }}_linux_{{ release_arch }}.tar.gz"
       binaries: [pprotein, pprotein-agent]
-    - url: "https://github.com/tkuchiki/alp/releases/download/v{{ alp_version }}/alp_linux_{{ release_arch }}.tar.gz"
+    - url: "https://github.com/tkuchiki/alp/releases/download/v{{ pprotein_alp_version }}/alp_linux_{{ release_arch }}.tar.gz"
       binaries: [alp]
-    - url: "https://github.com/tkuchiki/slp/releases/download/v{{ slp_version }}/slp_linux_{{ release_arch }}.tar.gz"
+    - url: "https://github.com/tkuchiki/slp/releases/download/v{{ pprotein_slp_version }}/slp_linux_{{ release_arch }}.tar.gz"
       binaries: [slp]
 
 - name: Install systemd units

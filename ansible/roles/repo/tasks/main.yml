@@ -51,7 +51,7 @@
   when: inventory_hostname in groups.primary
   ansible.builtin.find:
     paths: "{{ repo_dir }}/app"
-    size: "{{ gitignore_size_limit }}"
+    size: "{{ repo_gitignore_size_limit }}"
     recurse: true
   register: repo_large_files
 
@@ -67,6 +67,6 @@
       {% for file in repo_large_files.files %}
       /{{ file.path | relpath(repo_dir ~ '/app') }}
       {% endfor %}
-      {% for dir in gitignore_dirs %}
+      {% for dir in repo_gitignore_dirs %}
       /{{ dir }}
       {% endfor %}

@@ -10,7 +10,7 @@ pprotein の httplog は alp で集計する。`/api/users/123` と `/api/users/
 ## 手順
 
 1. `app/` の中で、ベンチマーカーが叩く実装のルーティング定義を探す
-   - 使う言語は `ansible/group_vars/all.yml` の `build_dir` で分かる
+   - 使う言語は `ansible/group_vars/all.yml` の `app_dir` で分かる (既定は `go`)
    - Go の echo なら `e.GET(`、`e.Group(` など。ほかのフレームワーク (chi, gin, net/http の `GET /path/{id}` など) も同じ考え方で読む
    - Group やサブルーターの prefix は、子のルートのパスに連結する
 2. ルートごとに正規表現を作る

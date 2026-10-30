@@ -6,7 +6,7 @@
   failed_when: false
 
 - name: Replace Go
-  when: ("go" ~ go_version ~ " ") not in base_installed_go.stdout
+  when: ("go" ~ base_go_version ~ " ") not in base_installed_go.stdout
   become: true
   block:
     - name: Remove old Go
@@ -16,6 +16,6 @@
 
     - name: Extract Go
       ansible.builtin.unarchive:
-        src: "https://go.dev/dl/go{{ go_version }}.linux-{{ release_arch }}.tar.gz"
+        src: "https://go.dev/dl/go{{ base_go_version }}.linux-{{ release_arch }}.tar.gz"
         dest: /usr/local
         remote_src: true

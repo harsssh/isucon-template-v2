@@ -1,0 +1,11 @@
+# GitHub の上限 (100MB) を超えるファイルは .gitignore に追加する
+repo_gitignore_size_limit: 100M
+# 参照実装のうち使わない言語のディレクトリ
+repo_gitignore_dirs:
+  - perl
+  - php
+  - python
+  - ruby
+  - rust
+  - node
+  - nodejs

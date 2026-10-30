@@ -36,7 +36,7 @@
 - name: Install bottom
   become: true
   ansible.builtin.apt:
-    deb: "https://github.com/ClementTsang/bottom/releases/download/{{ bottom_version }}/bottom_{{ bottom_version }}-1_{{ release_arch }}.deb"
+    deb: "https://github.com/ClementTsang/bottom/releases/download/{{ base_bottom_version }}/bottom_{{ base_bottom_version }}-1_{{ release_arch }}.deb"
     lock_timeout: 300
 
 - name: Create bottom config directory

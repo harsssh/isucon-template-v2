@@ -13,5 +13,7 @@ deploy:
 lint:
 	ansible-lint ansible/
 
+# filter_plugins は Ansible の制約で Python なので、そのテストも Python で書く
 test:
 	PYTHONPATH=ansible/filter_plugins python3 -m unittest discover -s ansible/tests
+	ruby -e 'ARGV.each { |f| require_relative f }' ansible/tests/test_*.rb

@@ -25,6 +25,7 @@
             pkgs.coreutils
             pkgs.gnumake
             pkgs.python3
+            pkgs.ruby
           ];
         };
       });

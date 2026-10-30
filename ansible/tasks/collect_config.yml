@@ -6,6 +6,17 @@
 
 - name: Collect config files into common/
   when: not collected_config.stat.exists
+  vars:
+    # 存在しないパスは無視される
+    collect_paths:
+      - /home/isucon/env.sh
+      - /etc/mysql
+      - /etc/nginx
+      - /etc/sysctl.d
+    # unit ファイルを集めるサービス。isu で始まるサービスは自動で追加される
+    collect_services:
+      - mysql
+      - nginx
   block:
     - name: Find unit files of related services
       ansible.builtin.shell: |
