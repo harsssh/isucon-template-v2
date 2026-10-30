@@ -3,7 +3,7 @@
 - name: Collect config files into config/common/
   vars:
     # 存在しないパスは無視される
-    collect_paths: "{{ (app_env_files | default([])) + ['/etc/mysql', '/etc/nginx', '/etc/sysctl.d'] }}"
+    collect_paths: "{{ (app_env_files | default([])) + ['/etc/mysql', '/etc/nginx', '/etc/sysctl.d', '/etc/memcached.conf'] }}"
     # unit ファイルを集めるサービス。ISUCON14 の matcher のように WorkingDirectory が無い補助のサービスもあるので、
     # isu で始まるサービスも追加する
     collect_services: "{{ ['nginx', db_service] + app_service_candidates + ([app_service] if app_service is defined else []) }}"

@@ -79,6 +79,7 @@ Ansible などは Nix の devShell にあり、direnv で読み込まれる。�
 
 - サービスの配置は `ansible/inventory.yml` のホストごとの `host_services` で変える。他のホストに割り当てたサービスは、デプロイで停止して自動起動を無効にする
 - `/etc/hosts` に全ホストが登録されているので、`config/common/` の設定ファイルでは他のホストを `s2` のように名前で書く。IP を書くためだけにホスト別のファイルを作らない
+- 複数台のアプリでキャッシュを共有するときは memcached を使う。setup で全ホストに入り、`0.0.0.0:11211` で listen する。1 台の `host_services` に `memcached` を書いて他のホストでは止め、アプリからは `s2:11211` のように名前で接続する。`/initialize` で `flush_all` する
 - MySQL を別ホストに移すときは、`bind-address` と、接続元のホストからのユーザーの権限も変える
 
 ## 計測

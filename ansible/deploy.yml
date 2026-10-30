@@ -7,7 +7,7 @@
     branch: main
     # 配布で設定ファイルが変わったときに再起動するサービスと、その設定ファイルのディレクトリ
     # unit ファイル (<サービス名>.service) とその drop-in が変わったときも再起動する
-    service_config_dirs: "{{ {'nginx': ['/etc/nginx/'], db_service: ['/etc/mysql/']} }}"
+    service_config_dirs: "{{ {'nginx': ['/etc/nginx/'], db_service: ['/etc/mysql/'], 'memcached': ['/etc/memcached.conf']} }}"
     # 最後に空にするログ。ベンチごとの集計を分けるため
     rotated_logs:
       - /var/log/nginx/access.log

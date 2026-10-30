@@ -23,6 +23,7 @@
       ansible.builtin.import_tasks: tasks/find_services.yml
   roles:
     - base
+    - memcached
     - pprotein
 
 # primary の webapp と設定ファイルをリポジトリに取り込んで push する

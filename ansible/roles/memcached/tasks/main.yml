@@ -1,0 +1,25 @@
+# 複数台のアプリでキャッシュを共有するための memcached を全ホストに入れる
+# どのホストで動かすかは inventory の host_services で決める。既定では全ホストで動く
+# 設定は /etc に直接書き、collect_config で config/common/ に取り込む。以降は config/common/ で変える
+- name: Install memcached
+  become: true
+  ansible.builtin.apt:
+    name: memcached
+    update_cache: true
+    cache_valid_time: 3600
+    lock_timeout: 300
+
+- name: Configure memcached
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/memcached.conf
+    regexp: "^{{ item.option }}\\s"
+    line: "{{ item.option }} {{ item.value }}"
+  loop:
+    # 他のホストのアプリから接続できるようにする
+    - { option: "-l", value: "0.0.0.0" }
+    # キャッシュに使うメモリ (MB)。既定の 64 では追い出しが起きやすい
+    - { option: "-m", value: "1024" }
+    # 同時接続数。既定の 1024 では複数台のアプリの接続プールで足りなくなることがある
+    - { option: "-c", value: "4096" }
+  notify: Restart memcached
