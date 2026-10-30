@@ -1,0 +1,80 @@
+# origin のブランチを全サーバーにデプロイする
+#   make deploy BRANCH=main
+- name: Deploy
+  hosts: all
+  gather_facts: false
+  vars:
+    branch: main
+    assigned_services: "{{ groups.all | map('extract', hostvars, 'services') | flatten | unique }}"
+  tasks:
+    # サーバー上の変更は捨てる
+    - name: Checkout branch
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dir }}"
+        version: "{{ branch }}"
+        force: true
+        accept_newhostkey: true
+
+    # Go などの PATH は ~/.bashrc で設定されているので、対話シェルとして読み込む
+    - name: Build application
+      when: app_service in services
+      ansible.builtin.command: bash -ic make
+      args:
+        chdir: "{{ repo_dir }}/{{ build_dir }}"
+      changed_when: true
+
+    - name: Distribute config files
+      become: true
+      ansible.builtin.command:
+        argv: [./assets/distribute_config.sh, "{{ inventory_hostname }}"]
+        chdir: "{{ repo_dir }}"
+      register: distributed_config
+      changed_when: distributed_config.stdout_lines | length > 0
+
+    - name: Decide actions from changed config files
+      ansible.builtin.set_fact:
+        deploy_plan: "{{ distributed_config.stdout_lines | deploy_actions(services, app_service, service_config_dirs) }}"
+
+    - name: Reload systemd
+      when: deploy_plan.daemon_reload
+      become: true
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: Reload sysctl
+      when: deploy_plan.reload_sysctl
+      become: true
+      ansible.builtin.command: sysctl --system
+      changed_when: true
+
+    - name: Stop services assigned to other hosts
+      become: true
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop: "{{ assigned_services | difference(services) }}"
+
+    - name: Restart services
+      become: true
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: restarted
+        enabled: true
+      loop: "{{ deploy_plan.restart_services }}"
+
+    - name: Start other services
+      become: true
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop: "{{ services | difference(deploy_plan.restart_services) }}"
+
+    # 存在しないログは作らない (-c)
+    - name: Rotate logs
+      become: true
+      ansible.builtin.command:
+        argv: "{{ ['truncate', '-c', '-s', '0'] + rotated_logs }}"
+      changed_when: true

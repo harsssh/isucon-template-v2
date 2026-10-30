@@ -20,6 +20,11 @@
           packages = [
             pkgs.ansible
             pkgs.ansible-lint
+            # Makefile と assets/ のスクリプト、テスト用
+            pkgs.bash
+            pkgs.coreutils
+            pkgs.gnumake
+            pkgs.python3
           ];
         };
       });

@@ -3,6 +3,12 @@
 all:
   vars:
     ansible_user: isucon
+  # サービスの配置をホストごとに変えるときは services を上書きする
+  # 例: s1 で nginx とアプリ、s2 で MySQL を動かす
+  #   s1:
+  #     services: [nginx, isucon-go]
+  #   s2:
+  #     services: [mysql]
   hosts:
     s1:
     s2:

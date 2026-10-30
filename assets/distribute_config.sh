@@ -1,15 +1,25 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+# リポジトリの common/ と <host>/ にある設定ファイルを <dest_root> 以下の同じパスに置き、
+# 内容が変わったファイルのパスを 1 行ずつ出力する。同じパスのファイルは <host>/ を優先する
+# Usage: distribute_config.sh <host> [dest_root]
+set -euo pipefail
 
-config_dir_names=("common" "$(hostname)")
+host=$1
+dest_root=${2:-/}
 
-for config_dir_name in "${config_dir_names[@]}"; do
-	(
-		if cd "$config_dir_name" &> /dev/null; then
-			find . -type f | while read -r rel_path; do
-				src_path=$(pwd)/$rel_path
-				dest_path=${rel_path#.}
-				sudo cp -auv "$src_path" "$dest_path"
-			done
-		fi
-	)
+declare -A sources
+for dir in common "$host"; do
+	[ -d "$dir" ] || continue
+	while IFS= read -r -d '' path; do
+		sources[${path#"$dir"/}]=$path
+	done < <(find "$dir" -type f -print0)
+done
+
+for rel_path in "${!sources[@]}"; do
+	src_path=${sources[$rel_path]}
+	dest_path=${dest_root%/}/$rel_path
+	if ! cmp -s "$src_path" "$dest_path"; then
+		install -D -m "$(stat -c %a "$src_path")" "$src_path" "$dest_path"
+		echo "$dest_path"
+	fi
 done

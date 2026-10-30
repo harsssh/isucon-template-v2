@@ -4,6 +4,18 @@ repo_dir: "/home/isucon/{{ repo_url | basename | regex_replace('\\.git$', '') }}
 webapp_dir: /home/isucon/webapp
 
 # Frequently changed
+# TODO: UPDATE ME
+# アプリの systemd サービス名。deploy で毎回ビルドして再起動する
+app_service: isucon-go
+# アプリのビルドディレクトリ (リポジトリからの相対パス)。make を実行する
+build_dir: app/go
+# ホストで動かすサービス。ホストごとに変えるときは inventory.yml の host 変数で上書きする
+# どのホストにも割り当てられていないサービスは触らない。他のホストに割り当てられたサービスは deploy で停止する
+services:
+  - nginx
+  - mysql
+  - "{{ app_service }}"
+
 # 初回セットアップ時に primary から common/ に集める設定ファイル。存在しないパスは無視される
 collect_paths:
   - /home/isucon/env.sh
@@ -16,6 +28,16 @@ collect_services:
   - nginx
 
 # Rarely changed
+# 配布で設定ファイルが変わったときに再起動するサービスと、その設定ファイルのディレクトリ
+# unit ファイル (<サービス名>.service) が変わったときも再起動する
+service_config_dirs:
+  nginx: [/etc/nginx/]
+  mysql: [/etc/mysql/]
+# deploy の最後に空にするログ。ベンチごとの集計を分けるため
+rotated_logs:
+  - /var/log/nginx/access.log
+  - /var/log/mysql/mysql-slow.log
+
 # GitHub の上限 (100MB) を超えるファイルは .gitignore に追加する
 gitignore_size_limit: 100M
 # 参照実装のうち使わない言語のディレクトリ
@@ -28,7 +50,6 @@ gitignore_dirs:
   - node
   - nodejs
 
-go_task_version: "3.54.0"
 bottom_version: "0.10.2"
 pprotein_version: "1.2.4"
 alp_version: "1.0.21"

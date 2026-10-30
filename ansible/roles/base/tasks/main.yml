@@ -51,15 +51,6 @@
     dest: ~/.config/bottom/bottom.toml
     mode: "0644"
 
-- name: Install go-task
-  become: true
-  ansible.builtin.unarchive:
-    src: "https://github.com/go-task/task/releases/download/v{{ go_task_version }}/task_linux_{{ release_arch }}.tar.gz"
-    dest: /usr/local/bin
-    remote_src: true
-    include: [task]
-    creates: /usr/local/bin/task
-
 - name: Configure git
   community.general.git_config:
     scope: global
@@ -77,10 +68,6 @@
     marker: "# {mark} MANAGED BY ANSIBLE (base)"
     block: |
       export PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
-      eval "$(task --completion bash)"
-      alias task="task -g"
-      alias deploy="task deploy"
-      alias d="task deploy"
       alias sc="sudo systemctl"
       alias scs="sudo systemctl status"
       alias jc="sudo journalctl"

@@ -70,10 +70,3 @@
       {% for dir in gitignore_dirs %}
       /{{ dir }}
       {% endfor %}
-
-# alias task="task -g" で、どこからでも Taskfile.yml を使えるようにする
-- name: Link Taskfile to home directory
-  ansible.builtin.file:
-    src: "{{ repo_dir }}/Taskfile.yml"
-    dest: ~/Taskfile.yml
-    state: link
