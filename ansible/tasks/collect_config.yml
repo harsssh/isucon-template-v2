@@ -1,11 +1,5 @@
-# 初回だけ実行する。2 回目以降は common/ を手で編集している前提で上書きしない
-- name: Check whether config files are already collected
-  ansible.builtin.stat:
-    path: "{{ repo_dir }}/common/etc"
-  register: collected_config
-
+# primary の設定ファイルを common/ にコピーする。common/ のファイルより新しいものだけを上書きする
 - name: Collect config files into common/
-  when: not collected_config.stat.exists
   vars:
     # 存在しないパスは無視される
     collect_paths:

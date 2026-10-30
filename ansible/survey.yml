@@ -38,6 +38,21 @@
       register: survey_origin_access
       failed_when: false
 
+    # deploy は primary から集めた設定ファイルを全ホストに配るので、primary と違うファイルを見つける
+    # env.sh には自ホストの IP など、ホストごとに違う値が入っていることがある
+    - name: Checksum config files distributed by deploy
+      become: true
+      ansible.builtin.shell: |
+        set -o pipefail
+        {
+          find /etc/nginx /etc/mysql /etc/sysctl.d -type f 2>/dev/null
+          find /home/isucon -maxdepth 1 -type f -name 'env*'
+        } | sort | xargs -r -d '\n' sha256sum
+      args:
+        executable: /bin/bash
+      register: survey_config_checksums
+      changed_when: false
+
     - name: Check paths
       ansible.builtin.stat:
         path: "{{ item }}"
@@ -52,6 +67,11 @@
         # --limit で外したホストは app_service が決まらないので、実行中のホストだけを見る
         play_services: "{{ ansible_play_hosts | map('extract', hostvars, 'host_services') | flatten | unique }}"
         missing_services: "{{ play_services | difference(unit_names) if app_service is defined else [] }}"
+        primary_host: "{{ groups.primary | first }}"
+        primary_config_checksums: "{{ hostvars[primary_host].survey_config_checksums.stdout | default(none) }}"
+        differing_files: >-
+          {{ survey_config_checksums.stdout | differing_config_files(primary_config_checksums)
+             if primary_config_checksums is not none else [] }}
       ansible.builtin.set_fact:
         survey_checks:
           - assumption: "OS が Debian 系で、アーキテクチャが x86_64 か aarch64 ({{ ansible_facts.distribution }}, {{ ansible_facts.architecture }})"
@@ -76,6 +96,11 @@
             ok: "{{ survey_nginx_includes_conf_d.rc == 0 }}"
           - assumption: "/etc/mysql/mysql.conf.d か mariadb.conf.d がある (slow log の設定先)"
             ok: "{{ existing_paths | select('match', '^/etc/mysql/') | length > 0 }}"
+          - assumption: >-
+              /etc/nginx, /etc/mysql, /etc/sysctl.d, ~/env* が primary ({{ primary_host }}) と同じ
+              (最初の deploy で primary のものに上書きされる。ホストごとに違う値は s2/ などに置く。
+              {{ '違うもの: ' ~ differing_files if primary_config_checksums is not none else 'primary を含めずに実行したので未確認' }})
+            ok: "{{ primary_config_checksums is not none and differing_files | length == 0 }}"
 
     - name: Create survey directory
       delegate_to: localhost

@@ -1,3 +1,20 @@
+# setup と deploy が書き換えるファイルを、最初の setup の前の状態で退避する。想定外の構成のときに手で戻すため
+# 2 回目以降の setup では、書き換えた後の状態で上書きしないよう何もしない
+- name: Back up files changed by setup and deploy
+  become: true
+  ansible.builtin.shell: |
+    set -e
+    # /etc/mysql/debian.cnf などのパスワードを含むので、root だけが読めるようにする
+    umask 077
+    # 無いパスは --ignore-failed-read で無視する
+    tar --ignore-failed-read -czf {{ base_backup_path }}.tmp \
+      /etc/nginx /etc/mysql /etc/sysctl.d /etc/systemd/system /lib/systemd/system \
+      /etc/hostname /etc/hosts \
+      /home/isucon/env* /home/isucon/.bashrc /home/isucon/.gitconfig
+    mv {{ base_backup_path }}.tmp {{ base_backup_path }}
+  args:
+    creates: "{{ base_backup_path }}"
+
 # deploy で配布するホスト別の設定 (s1/ など) は hostname で選ばれるので、最初に設定する
 - name: Set hostname
   become: true

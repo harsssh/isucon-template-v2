@@ -22,39 +22,73 @@
 
 # primary の webapp と設定ファイルをリポジトリに取り込んで push する
 # 他のホストはこの push の後に clone する
+# サーバーの元の状態を git に残すため、setup が手を加える前と後で 1 回ずつコミットする
 - name: Import webapp on primary
   hosts: primary
+  vars:
+    is_first_import: "{{ pushed_config.stdout_lines | difference(['common/.gitkeep']) | length == 0 }}"
   roles:
     - repo
-    - access_log
   tasks:
-    - name: Collect config files
-      ansible.builtin.import_tasks: tasks/collect_config.yml
-
-    # Makefile が無い参照実装では、unit ファイルが起動する実行ファイルをビルドする Makefile を作る
-    - name: Create Makefile for application
-      when: (app_binary | default('') or '').startswith(app_dir ~ '/')
-      ansible.builtin.template:
-        src: templates/Makefile.j2
-        dest: "{{ app_dir }}/Makefile"
-        mode: "0644"
-        force: false
-
-    - name: Commit and push imported files
+    # push 済みなら取り込まない。競技中の再実行で、サーバー上の編集を push しないため
+    # push の前に失敗したときは、再実行で続きから取り込む
+    - name: Check whether config files are already pushed
       ansible.builtin.shell: |
         set -e
-        # 取り込み済みなら何もしない。競技中の再実行で、サーバー上の編集を push しないため
-        if [ -n "$(git ls-files -- app common ':!app/.gitkeep')" ]; then
-          echo "nothing to commit"
-          exit 0
-        fi
-        git add app common
-        git commit -q -m "import webapp and config from {{ inventory_hostname }}"
-        git push -q origin HEAD
+        git ls-tree -r --name-only origin/main -- common
       args:
         chdir: "{{ repo_dir }}"
-      register: push_result
-      changed_when: push_result.stdout != "nothing to commit"
+      register: pushed_config
+      changed_when: false
+
+    - name: Commit original webapp and config
+      when: is_first_import
+      block:
+        - name: Collect original config files
+          ansible.builtin.import_tasks: tasks/collect_config.yml
+
+        - name: Commit original files
+          ansible.builtin.shell: |
+            set -e
+            git add app common
+            if git diff --cached --quiet; then
+              echo "nothing to commit"
+              exit 0
+            fi
+            git commit -q -m "import webapp and config from {{ inventory_hostname }}"
+          args:
+            chdir: "{{ repo_dir }}"
+          register: original_commit
+          changed_when: original_commit.stdout != "nothing to commit"
+
+    - name: Configure logs for alp and slp
+      ansible.builtin.import_role:
+        name: access_log
+
+    - name: Commit and push changes by setup
+      when: is_first_import
+      block:
+        - name: Collect config files changed by setup
+          ansible.builtin.import_tasks: tasks/collect_config.yml
+
+        # Makefile が無い参照実装では、unit ファイルが起動する実行ファイルをビルドする Makefile を作る
+        - name: Create Makefile for application
+          when: (app_binary | default('') or '').startswith(app_dir ~ '/')
+          ansible.builtin.template:
+            src: templates/Makefile.j2
+            dest: "{{ app_dir }}/Makefile"
+            mode: "0644"
+            force: false
+
+        - name: Commit and push changes
+          ansible.builtin.shell: |
+            set -e
+            git add app common
+            git diff --cached --quiet || git commit -q -m "configure logs for alp and slp and add files for deploy"
+            git push -q origin HEAD
+          args:
+            chdir: "{{ repo_dir }}"
+          changed_when: true
 
 - name: Link webapp on other servers
   hosts: all:!primary
