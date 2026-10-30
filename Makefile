@@ -1,6 +1,10 @@
-.PHONY: setup deploy lint test
+.PHONY: survey setup deploy lint test
 
 BRANCH ?= main
+
+# サーバーの状態を survey/ に書き出し、ansible の前提と合わない点を表示する。サーバーは変更しない
+survey:
+	ansible-playbook ansible/survey.yml
 
 # 競技サーバーの初回セットアップ
 setup:

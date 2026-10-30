@@ -12,6 +12,8 @@ app_dir: "{{ webapp_dir }}/go"
 # app_service: isucon-go
 
 # 以下は通常変えない
+# いずれかのホストに割り当てたサービス
+assigned_services: "{{ groups.all | map('extract', hostvars, 'services') | flatten | unique }}"
 # サーバー上のリポジトリは、手元のリポジトリの origin を clone したもの
 repo_url: "{{ lookup('ansible.builtin.pipe', 'git remote get-url origin') }}"
 repo_dir: "/home/isucon/{{ repo_url | basename | regex_replace('\\.git$', '') }}"

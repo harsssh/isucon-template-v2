@@ -1,0 +1,99 @@
+# サーバーの状態を survey/<host>.md に書き出し、ansible の前提と合わない点を表示する
+# サーバーは変更しないので、make setup の前に何度実行してもよい
+#   make survey
+- name: Survey servers
+  hosts: all
+  vars:
+    survey_dir: "{{ playbook_dir }}/../survey"
+    # pprotein はこのポートのアプリから pprof を取る
+    survey_pprof_port: "{{ (lookup('ansible.builtin.file', playbook_dir ~ '/roles/pprotein/files/targets.json') | from_json
+      | selectattr('Type', 'eq', 'pprof') | first).URL | urlsplit('port') }}"
+  tasks:
+    - name: Find application service
+      ansible.builtin.import_tasks: tasks/find_app_service.yml
+
+    - name: Collect server state
+      become: true
+      ansible.builtin.script: survey.sh {{ webapp_dir | quote }}
+      register: survey_state
+      changed_when: false
+
+    - name: Gather services
+      ansible.builtin.service_facts:
+
+    - name: List listening ports
+      ansible.builtin.command: ss -Htln
+      register: survey_listening_ports
+      changed_when: false
+
+    - name: Check whether nginx config includes conf.d
+      ansible.builtin.command: grep -Eq '^\s*include\s+/etc/nginx/conf\.d/\*\.conf;' /etc/nginx/nginx.conf
+      register: survey_nginx_includes_conf_d
+      changed_when: false
+      failed_when: false
+
+    - name: Check paths
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ app_dir }}/Makefile"
+        - /etc/mysql/mysql.conf.d
+        - /etc/mysql/mariadb.conf.d
+      register: survey_paths
+
+    # 前提ごとに、満たしているかを ok に入れる
+    - name: Check assumptions
+      vars:
+        existing_paths: "{{ survey_paths.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+        unit_names: "{{ ansible_facts.services | list | map('regex_replace', '\\.service$', '') | list }}"
+        missing_services: "{{ assigned_services | difference(unit_names) if app_service is defined else [] }}"
+      ansible.builtin.set_fact:
+        survey_checks:
+          - assumption: "OS が Debian 系で、アーキテクチャが x86_64 か aarch64 ({{ ansible_facts.distribution }}, {{ ansible_facts.architecture }})"
+            ok: "{{ ansible_facts.os_family == 'Debian' and ansible_facts.architecture in ['x86_64', 'aarch64'] }}"
+          - assumption: "WorkingDirectory が {{ app_dir }} のサービスが 1 つに決まる (候補: {{ app_service_candidates }})"
+            ok: "{{ app_service is defined }}"
+          - assumption: "{{ app_dir }}/Makefile がある (deploy で make を実行する)"
+            ok: "{{ app_dir ~ '/Makefile' in existing_paths }}"
+          - assumption: >-
+              inventory の services の unit ファイルがある
+              ({{ '無いもの: ' ~ missing_services if app_service is defined else 'アプリのサービスが決まらないので未確認' }})
+            ok: "{{ app_service is defined and missing_services | length == 0 }}"
+          - assumption: "アプリが {{ survey_pprof_port }} 番ポートで listen している (pprotein の pprof の取得先)"
+            ok: "{{ survey_listening_ports.stdout_lines | select('search', ':' ~ survey_pprof_port ~ '\\s') | length > 0 }}"
+          - assumption: "/etc/nginx/nginx.conf が conf.d/*.conf を include している (LTSV のアクセスログの設定先)"
+            ok: "{{ survey_nginx_includes_conf_d.rc == 0 }}"
+          - assumption: "/etc/mysql/mysql.conf.d か mariadb.conf.d がある (slow log の設定先)"
+            ok: "{{ existing_paths | select('match', '^/etc/mysql/') | length > 0 }}"
+
+    - name: Create survey directory
+      delegate_to: localhost
+      ansible.builtin.file:
+        path: "{{ survey_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Save survey
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ survey_dir }}/{{ inventory_hostname }}.md"
+        mode: "0644"
+        content: |
+          # {{ inventory_hostname }}
+
+          `make survey` で集めたサーバーの状態。
+
+          ## ansible の前提
+
+          {% for check in survey_checks %}
+          - {{ 'OK' if check.ok else 'NG' }}: {{ check.assumption }}
+          {% endfor %}
+
+          {{ survey_state.stdout }}
+
+    - name: Show unmet assumptions
+      when: unmet_assumptions | length > 0
+      vars:
+        unmet_assumptions: "{{ survey_checks | rejectattr('ok') | map(attribute='assumption') | list }}"
+      ansible.builtin.debug:
+        msg: "{{ unmet_assumptions }}"

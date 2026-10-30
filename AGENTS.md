@@ -9,6 +9,7 @@ ISUCON の競技用リポジトリ。競技サーバーの webapp と設定フ�
 - `s1/` 〜 `s5/`: そのホストだけに配る設定ファイル。`common/` と同じパスなら、こちらを優先する
 - `ansible/`: セットアップとデプロイの playbook。ホストとサービスの配置は `ansible/inventory.yml`
 - `docs/tuning/`: nginx, MySQL, sysctl の設定例。使うときは `common/` にコピーする
+- `survey/`: `make survey` で集めた各サーバーの状態 (サービス、listen しているポート、unit ファイル、環境変数のファイル、テーブルのサイズなど)。サーバーの構成を調べるときは、まずここを読む
 
 `app/` と `common/` は初回の `make setup` で primary (既定は s1) から取り込まれる。
 
@@ -27,11 +28,12 @@ ISUCON の競技用リポジトリ。競技サーバーの webapp と設定フ�
 Ansible などは Nix の devShell にあり、direnv で読み込まれる。読み込まれていなければ `nix develop -c` を付ける。
 
 - `make deploy [BRANCH=...]`: デプロイ
+- `make survey`: サーバーの状態を `survey/` に書き出し、ansible の前提と合わない点を表示する。サーバーは変更しない
 - `make setup`: 初回セットアップ。何度実行しても同じ状態になる
 - `make test`: `ansible/` のスクリプトとフィルターのテスト
 - `make lint`: ansible-lint
 
-サーバーには `ssh s1` のように入れる。ベンチマーカーのホストには入れない。
+サーバーには `ssh s1` のように入れる。
 
 ## デプロイが行うこと
 

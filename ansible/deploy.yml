@@ -5,7 +5,6 @@
   gather_facts: false
   vars:
     branch: main
-    assigned_services: "{{ groups.all | map('extract', hostvars, 'services') | flatten | unique }}"
     # 配布で設定ファイルが変わったときに再起動するサービスと、その設定ファイルのディレクトリ
     # unit ファイル (<サービス名>.service) が変わったときも再起動する
     service_config_dirs:
@@ -17,30 +16,15 @@
       - /var/log/mysql/mysql-slow.log
   tasks:
     - name: Find application service
-      when: app_service is undefined
-      block:
-        - name: Show working directories of isu* services
-          ansible.builtin.shell: |
-            set -o pipefail
-            systemctl list-unit-files --type=service --no-legend 'isu*' | awk '$1 !~ /@/ {print $1}' |
-              xargs -r systemctl show -p Id -p WorkingDirectory
-          args:
-            executable: /bin/bash
-          register: isu_units
-          changed_when: false
+      ansible.builtin.import_tasks: tasks/find_app_service.yml
 
-        - name: Set application service
-          ansible.builtin.set_fact:
-            app_service: "{{ isu_units.stdout | services_in_directory(app_dir) | first }}"
-          when: isu_units.stdout | services_in_directory(app_dir) | length == 1
-
-        - name: Application service must be found
-          ansible.builtin.assert:
-            that: app_service is defined
-            fail_msg: >-
-              WorkingDirectory が {{ app_dir }} のサービスが 1 つに決まりません
-              (候補: {{ isu_units.stdout | services_in_directory(app_dir) }})。
-              ansible/group_vars/all.yml で app_service を指定してください
+    - name: Application service must be found
+      ansible.builtin.assert:
+        that: app_service is defined
+        fail_msg: >-
+          WorkingDirectory が {{ app_dir }} のサービスが 1 つに決まりません
+          (候補: {{ app_service_candidates }})。
+          ansible/group_vars/all.yml で app_service を指定してください
 
     # サーバー上の変更は捨てる
     - name: Checkout branch

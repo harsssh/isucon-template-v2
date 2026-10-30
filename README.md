@@ -31,11 +31,17 @@ Host s2
 direnv を使わない場合は、各コマンドの前に `nix develop -c` を付ける。
 
 1. `ansible/inventory.yml` の `hosts` を使うサーバーに合わせる
-2. 全サーバーをセットアップする
+2. サーバーの状態を調べる。ansible の前提と合わない点が表示されたら、`ansible/group_vars/all.yml` などを直す
+   ```bash
+   make survey
+   ```
+3. 全サーバーをセットアップする
    ```bash
    make setup
    ```
-3. 手元で `git pull` する (primary の webapp と設定ファイルが push されている)
+4. 手元で `git pull` する (primary の webapp と設定ファイルが push されている)
+
+`survey/s1.md` などには、前提の照合結果と、サービス、listen しているポート、unit ファイル、テーブルのサイズなどを書き出す。コミットしておくと、エージェントがサーバーの構成を調べ直さずに済む。
 
 `setup.yml` が行うこと:
 
@@ -119,6 +125,7 @@ Go 以外の実装を使うときやアプリのサービスが見つからな�
 
 | コマンド | 内容 |
 |---|---|
+| `make survey` | サーバーの状態を `survey/` に書き出し、ansible の前提と照合する。サーバーは変更しない |
 | `make setup` | 競技サーバーの初回セットアップ |
 | `make deploy [BRANCH=...]` | 全サーバーへのデプロイ |
 | `make lint` | ansible-lint |

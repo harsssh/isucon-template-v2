@@ -1,0 +1,20 @@
+# WorkingDirectory が app_dir のサービスを app_service_candidates に入れる
+# 1 つに決まり、app_service が指定されていなければ app_service にする
+- name: Show working directories of isu* services
+  ansible.builtin.shell: |
+    set -o pipefail
+    systemctl list-unit-files --type=service --no-legend 'isu*' | awk '$1 !~ /@/ {print $1}' |
+      xargs -r systemctl show -p Id -p WorkingDirectory
+  args:
+    executable: /bin/bash
+  register: isu_units
+  changed_when: false
+
+- name: Set application service candidates
+  ansible.builtin.set_fact:
+    app_service_candidates: "{{ isu_units.stdout | services_in_directory(app_dir) }}"
+
+- name: Set application service
+  when: app_service is undefined and app_service_candidates | length == 1
+  ansible.builtin.set_fact:
+    app_service: "{{ app_service_candidates | first }}"
