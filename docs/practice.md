@@ -2,6 +2,8 @@
 
 ## インスタンスの作成
 
+Claude Code の `/launch-servers` で、以下の手順で起動できる。
+
 [matsuu/aws-isucon](https://github.com/matsuu/aws-isucon) に記載の AMI からインスタンスを起動する。
 
 SSH 鍵を登録する場合は、以下のユーザーデータを設定する。

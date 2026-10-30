@@ -1,6 +1,6 @@
 ---
 name: register-ssh-hosts
-description: 練習用に起動した EC2 インスタンスを ~/.ssh/config.local に s1, s2, ..., bench として登録する。「ssh の設定を書いて」「config.local に登録して」「s1 に入れるようにして」と言われたとき、またはインスタンスを起動、作り直して IP が変わったときに使う。
+description: 練習用または本番用に起動した EC2 インスタンスを ~/.ssh/config.local に s1, s2, ..., bench として登録する。「ssh の設定を書いて」「config.local に登録して」「s1 に入れるようにして」と言われたとき、またはインスタンスを起動、作り直して IP が変わったときに使う。
 ---
 
 # register-ssh-hosts
@@ -11,7 +11,9 @@ Host 名は `ansible/inventory.yml` のホスト名 (`s1` 〜 `s5`) と揃える
 
 ## 手順
 
-1. 対象のインスタンスと Public IP を調べる。ユーザーに指定がなければ Name タグ (`isucon14-practice`, `isucon14-bench` など) で絞る
+1. 対象のインスタンスと Public IP を調べる。ユーザーに指定がなければ次で絞る
+   - 練習: Name タグ (`isucon14-practice`, `isucon14-bench` など)。`launch-servers` skill がこのタグを付ける
+   - 本番: CloudFormation の stack 名のタグ (`aws:cloudformation:stack-name`)。本番のベンチマーカーは運営の環境にあるので、`bench` は登録しない
    ```bash
    aws ec2 describe-instances \
      --filters Name=instance-state-name,Values=running \

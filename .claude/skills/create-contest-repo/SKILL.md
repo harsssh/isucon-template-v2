@@ -11,9 +11,8 @@ ISUCON の練習や本番では、このテンプレートから回ごとにリ�
 
 | | 練習 | 本番 |
 |---|---|---|
-| リポジトリ名 | `<問題>-practice-<連番>` (例: `isucon14q-practice-3`) | `<問題>` (例: `isucon15q`) |
-| サーバー | 自分で起動した EC2 (`docs/practice.md`) | ポータルに表示されるサーバー |
-| ssh の設定 | `register-ssh-hosts` skill で登録する | ポータルの IP をユーザーから受け取って登録する |
+| リポジトリ名 | `<問題>-practice-<連番>` (例: `isucon14-practice-3`) | `<問題>` (例: `isucon15`) |
+| サーバー | matsuu/aws-isucon の AMI から起動した EC2 | 運営の CloudFormation のテンプレートから作った stack の EC2 |
 | `make setup` の前 | 確認せず進めてよい | 実行してよいかユーザーに確認する |
 
 どちらでも、リポジトリは必ず private にする。本番中にコードを公開することは競技のルールで禁止されている。
@@ -21,7 +20,7 @@ ISUCON の練習や本番では、このテンプレートから回ごとにリ�
 ## 手順
 
 1. 練習か本番か、どの問題かを決める。ユーザーが言っていなければ聞く。練習ならサーバーの Name タグ (`isucon14-practice` など) からも分かる
-   - 問題は `isucon<回>` に、予選なら `q`、本選なら `f` を付けて表す (例: `isucon14q`, `isucon11f`)。過去のリポジトリ (`isucon12q`, `isucon11f-practice` など) と揃えるため
+   - 問題は `isucon<回>` で表す。予選と本選がある回 (ISUCON12 まで) は、予選なら `q`、本選なら `f` を付ける (例: `isucon12q`, `isucon11f`)。ISUCON13 と 14 のように 1 回だけの回は付けない (例: `isucon14`)。過去のリポジトリの名前と揃えるため
 2. 作るリポジトリの名前を決める
    - `gh api user -q .login` で owner を調べ、`gh repo list <owner> --limit 1000 --json name -q '.[].name'` で既存のリポジトリ名を一覧する
    - 練習: 同じ問題は何度も練習するので、毎回新しいリポジトリを作る。`<問題>-practice-<n>` の既存の最大の n に 1 を足す。無ければ 1 にする。連番の無い `<問題>-practice` は過去のものなので、番号の計算に含めない
@@ -33,9 +32,7 @@ ISUCON の練習や本番では、このテンプレートから回ごとにリ�
    ```
    - テンプレートのコピーは非同期なので、clone が空になることがある。`git -C <名前> log` が失敗したら、数秒待って `git -C <名前> pull origin main` をやり直す
 5. 作ったリポジトリで `direnv allow` を実行する
-6. サーバーの ssh の設定を登録する
-   - 練習: `register-ssh-hosts` skill を使う
-   - 本番: ポータルのサーバーの IP をユーザーから受け取り、`register-ssh-hosts` skill の手順 3 以降と同じ形で `~/.ssh/config.local` に書く。`bench` は無い
+6. サーバーがまだ無ければ `launch-servers` skill で起動し、`register-ssh-hosts` skill で ssh の設定を登録する
 7. `ansible/inventory.yml` の `hosts` を、登録したサーバー (`s1` から台数分) に合わせる。変えたらコミットして push する
 8. `make survey` を実行し、NG の項目と、その原因と直し方をユーザーに伝える
 9. NG が無ければ `make setup` に進む。本番では実行してよいか確認してから進める
