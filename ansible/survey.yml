@@ -7,8 +7,8 @@
     survey_dir: "{{ playbook_dir }}/../survey"
     survey_go_paths: "{{ go_bin_dirs | map('regex_replace', '$', '/go') | list }}"
   tasks:
-    - name: Find application service
-      ansible.builtin.import_tasks: tasks/find_app_service.yml
+    - name: Find services
+      ansible.builtin.import_tasks: tasks/find_services.yml
 
     - name: Collect server state
       become: true
@@ -19,9 +19,10 @@
     - name: Gather services
       ansible.builtin.service_facts:
 
-    - name: Check whether nginx config includes conf.d
-      ansible.builtin.command: grep -Eq '^\s*include\s+/etc/nginx/conf\.d/\*\.conf;' /etc/nginx/nginx.conf
-      register: survey_nginx_includes_conf_d
+    # ~/.bashrc の PATH にある Go も、deploy のビルドで使われる
+    - name: Find Go in interactive shell
+      ansible.builtin.command: bash -ic 'command -v go'
+      register: survey_shell_go
       changed_when: false
       failed_when: false
 
@@ -46,17 +47,22 @@
         set -o pipefail
         {
           find /etc/nginx /etc/mysql /etc/sysctl.d -type f 2>/dev/null
-          find /home/isucon -maxdepth 1 -type f -name 'env*'
-        } | sort | xargs -r -d '\n' sha256sum
+          # unit の EnvironmentFile は、無くてもよい (-) と指定されていることがある
+          printf '%s\n' "$ENV_FILES" | while read -r env_file; do
+            if [ -f "$env_file" ]; then echo "$env_file"; fi
+          done
+        } | sort -u | xargs -r -d '\n' sha256sum
       args:
         executable: /bin/bash
+      environment:
+        ENV_FILES: "{{ app_env_files | default([]) | join('\n') }}"
       register: survey_config_checksums
       changed_when: false
 
     - name: Check paths
       ansible.builtin.stat:
         path: "{{ item }}"
-      loop: "{{ [app_dir ~ '/Makefile', '/etc/mysql/mysql.conf.d', '/etc/mysql/mariadb.conf.d'] + survey_go_paths }}"
+      loop: "{{ [app_dir ~ '/Makefile'] + survey_go_paths }}"
       register: survey_paths
 
     # 前提ごとに、満たしているかを ok に入れる
@@ -84,20 +90,26 @@
               {{ app_dir }}/Makefile があるか、ExecStart の実行ファイル ({{ app_binary | default('不明') }}) が
               {{ app_dir }} にある (deploy で make を実行する。Makefile が無ければ setup で作る)
             ok: "{{ app_dir ~ '/Makefile' in existing_paths or (app_binary | default('') or '').startswith(app_dir ~ '/') }}"
-          - assumption: "Go が {{ go_bin_dirs }} のどれかにある (deploy のビルドで使う)"
-            ok: "{{ survey_go_paths | intersect(existing_paths) | length > 0 }}"
+          - assumption: >-
+              Go が対話シェルの PATH ({{ survey_shell_go.stdout | default('', true) or '無し' }}) か
+              {{ go_bin_dirs }} のどれかにある (deploy のビルドで使う)
+            ok: "{{ survey_shell_go.stdout != '' or survey_go_paths | intersect(existing_paths) | length > 0 }}"
           - assumption: >-
               inventory の host_services の unit ファイルがある
               ({{ '無いもの: ' ~ missing_services if app_service is defined else 'アプリのサービスが決まらないので未確認' }})
             ok: "{{ app_service is defined and missing_services | length == 0 }}"
-          - assumption: "アプリが listen しているポートが分かる ({{ app_port | default('不明') }}。pprotein の pprof の取得先にする)"
-            ok: "{{ app_port | default(none) is not none }}"
-          - assumption: "/etc/nginx/nginx.conf が conf.d/*.conf を include している (LTSV のアクセスログの設定先)"
-            ok: "{{ survey_nginx_includes_conf_d.rc == 0 }}"
-          - assumption: "/etc/mysql/mysql.conf.d か mariadb.conf.d がある (slow log の設定先)"
-            ok: "{{ existing_paths | select('match', '^/etc/mysql/') | length > 0 }}"
           - assumption: >-
-              /etc/nginx, /etc/mysql, /etc/sysctl.d, ~/env* が primary ({{ primary_host }}) と同じ
+              アプリが listen しているポートが分かる ({{ app_port | default(none) or '不明' }}。pprotein の pprof の取得先にする。
+              unit のプロセスが listen していなければ、nginx の自ホストへの転送先 {{ nginx_dump | nginx_local_upstream_ports }} が 1 つのときにそれを使う)
+            ok: "{{ app_port | default(none) is not none }}"
+          - assumption: >-
+              nginx が /etc/nginx/conf.d/*.conf を読み込む (LTSV のアクセスログの設定先。
+              {{ 'nginx -T が失敗した' if nginx_dump == '' else 'nginx -T の include から判定' }})
+            ok: "{{ nginx_dump | nginx_includes('/etc/nginx/conf.d/ltsv-log.conf') }}"
+          - assumption: "/etc/mysql/my.cnf の !includedir から slow log の設定先が決まる ({{ db_conf_dir or '不明' }}。サービス名: {{ db_service }})"
+            ok: "{{ db_conf_dir is not none }}"
+          - assumption: >-
+              /etc/nginx, /etc/mysql, /etc/sysctl.d, アプリの環境変数のファイル {{ app_env_files | default([]) }} が primary ({{ primary_host }}) と同じ
               (最初の deploy で primary のものに上書きされる。ホストごとに違う値は s2/ などに置く。
               {{ '違うもの: ' ~ differing_files if primary_config_checksums is not none else 'primary を含めずに実行したので未確認' }})
             ok: "{{ primary_config_checksums is not none and differing_files | length == 0 }}"

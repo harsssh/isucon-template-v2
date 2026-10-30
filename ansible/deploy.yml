@@ -6,17 +6,15 @@
   vars:
     branch: main
     # 配布で設定ファイルが変わったときに再起動するサービスと、その設定ファイルのディレクトリ
-    # unit ファイル (<サービス名>.service) が変わったときも再起動する
-    service_config_dirs:
-      nginx: [/etc/nginx/]
-      mysql: [/etc/mysql/]
+    # unit ファイル (<サービス名>.service) とその drop-in が変わったときも再起動する
+    service_config_dirs: "{{ {'nginx': ['/etc/nginx/'], db_service: ['/etc/mysql/']} }}"
     # 最後に空にするログ。ベンチごとの集計を分けるため
     rotated_logs:
       - /var/log/nginx/access.log
       - /var/log/mysql/mysql-slow.log
   tasks:
-    - name: Find application service
-      ansible.builtin.import_tasks: tasks/find_app_service.yml
+    - name: Find services
+      ansible.builtin.import_tasks: tasks/find_services.yml
 
     - name: Application service must be found
       ansible.builtin.assert:

@@ -2,29 +2,31 @@
 # どのホストにも割り当てられていないサービスは触らない。他のホストに割り当てられたサービスは deploy で停止する
 host_services:
   - nginx
-  - mysql
+  - "{{ db_service }}"
   - "{{ app_service }}"
 
 # アプリのディレクトリ。deploy でここの make を実行する
-# app_service は、WorkingDirectory がこのディレクトリのサービスを deploy 時に自動で見つけて設定する
+# app_service と db_service は、tasks/find_services.yml がサーバーから見つけて設定する
 # 見つからないときだけ、サービス名を app_service に指定する
 app_dir: "{{ webapp_dir }}/go"
 # app_service: isucon-go
 
 # 以下は通常変えない
+# ansible_user のホームディレクトリ。deploy を速くするため facts を集めないので、ansible_facts.user_dir は使えない
+home_dir: "/home/{{ ansible_user }}"
 # いずれかのホストに割り当てたサービス
 assigned_services: "{{ groups.all | map('extract', hostvars, 'host_services') | flatten | unique }}"
 # サーバー上のリポジトリは、手元のリポジトリの origin を clone したもの
 repo_url: "{{ lookup('ansible.builtin.pipe', 'git remote get-url origin') }}"
-repo_dir: "/home/isucon/{{ repo_url | basename | regex_replace('\\.git$', '') }}"
-webapp_dir: /home/isucon/webapp
+repo_dir: "{{ home_dir }}/{{ repo_url | basename | regex_replace('\\.git$', '') }}"
+webapp_dir: "{{ home_dir }}/webapp"
 # Go を探すディレクトリ。setup で ~/.bashrc の PATH に先頭から順に入れる
 go_bin_dirs:
   # setup --tags go で入れる Go
   - /usr/local/go/bin
   # ISUCON14 の参照実装の Go
-  - /home/isucon/local/golang/bin
+  - "{{ home_dir }}/local/golang/bin"
   # go install したコマンド
-  - /home/isucon/go/bin
+  - "{{ home_dir }}/go/bin"
 # GitHub Releases の名前に使われるアーキテクチャ名
 release_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_facts.architecture] }}"

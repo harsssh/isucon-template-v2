@@ -10,7 +10,8 @@
     tar --ignore-failed-read -czf {{ base_backup_path }}.tmp \
       /etc/nginx /etc/mysql /etc/sysctl.d /etc/systemd/system /lib/systemd/system \
       /etc/hostname /etc/hosts \
-      /home/isucon/env* /home/isucon/.bashrc /home/isucon/.gitconfig
+      {{ home_dir }}/env* {{ home_dir }}/.bashrc {{ home_dir }}/.gitconfig \
+      {{ (app_env_files | default([])) | map('quote') | join(' ') }}
     mv {{ base_backup_path }}.tmp {{ base_backup_path }}
   args:
     creates: "{{ base_backup_path }}"

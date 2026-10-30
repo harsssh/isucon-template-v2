@@ -1,18 +1,15 @@
 # nginx と MySQL のログを alp, slp で集計できる形式にする
 # 設定は /etc に直接書き、collect_config で common/ に取り込む
-- name: Check whether nginx config includes conf.d
-  ansible.builtin.command: grep -Eq '^\s*include\s+/etc/nginx/conf\.d/\*\.conf;' /etc/nginx/nginx.conf
-  register: access_log_nginx_includes_conf_d
-  changed_when: false
-  failed_when: false
-
+# 置き場所は tasks/find_services.yml が調べた nginx_dump, db_conf_dir, db_service で決める
 - name: Warn about nginx config without conf.d
-  when: access_log_nginx_includes_conf_d.rc != 0
+  when: not access_log_nginx_includes_conf_d
   ansible.builtin.debug:
-    msg: /etc/nginx/nginx.conf が無いか conf.d を読み込んでいないので、LTSV のログは手で設定してください
+    msg: >-
+      {{ 'nginx -T が失敗したので' if nginx_dump == '' else 'nginx が /etc/nginx/conf.d/*.conf を読み込んでいないので' }}、
+      LTSV のログは手で設定してください
 
 - name: Configure nginx access log
-  when: access_log_nginx_includes_conf_d.rc == 0
+  when: access_log_nginx_includes_conf_d
   become: true
   block:
     - name: Install LTSV log config
@@ -30,39 +27,30 @@
         replace: '\1# \2'
       notify: Restart nginx
 
-    - name: Validate nginx config
-      ansible.builtin.command: nginx -t
+    # 書き換えた後の設定で、構文と access_log を確かめる
+    - name: Show nginx config after change
+      ansible.builtin.command: nginx -T
+      register: access_log_nginx_dump
       changed_when: false
 
-    - name: Find server-level access_log directives
-      ansible.builtin.find:
-        paths: [/etc/nginx/sites-enabled, /etc/nginx/conf.d]
-        contains: '^\s*access_log\s'
-        excludes: [ltsv-log.conf]
-        follow: true
-      register: access_log_overriding_access_logs
-
     - name: Warn about access_log overriding LTSV log
-      when: access_log_overriding_access_logs.matched > 0
+      when: overriding_files | length > 0
+      vars:
+        overriding_files: "{{ access_log_nginx_dump.stdout | nginx_files_with_directive('access_log') | difference(['/etc/nginx/conf.d/ltsv-log.conf']) }}"
       ansible.builtin.debug:
-        msg: "{{ access_log_overriding_access_logs.files | map(attribute='path') | join(', ') }} の access_log が LTSV のログを上書きします。削除するか ltsv 形式に変えてください"
+        msg: "{{ overriding_files | join(', ') }} の access_log が LTSV のログを上書きします。削除するか ltsv 形式に変えてください"
 
-- name: Find MySQL config directory
-  ansible.builtin.stat:
-    path: "{{ item }}"
-  loop:
-    - /etc/mysql/mysql.conf.d
-    - /etc/mysql/mariadb.conf.d
-  register: access_log_mysql_conf_dir_candidates
+- name: Warn about MySQL config without includedir
+  when: db_conf_dir is none
+  ansible.builtin.debug:
+    msg: /etc/mysql/my.cnf が無いか !includedir が無いので、slow log は手で設定してください
 
-# mysqld.cnf などの既存の設定より後に読まれるよう、99- で始める
+# 最後に読み込まれるディレクトリの中でも、mysqld.cnf などの既存の設定より後に読まれるよう、99- で始める
 - name: Install slow log config
-  when: access_log_mysql_conf_dirs | length > 0
+  when: db_conf_dir is not none
   become: true
-  vars:
-    access_log_mysql_conf_dirs: "{{ access_log_mysql_conf_dir_candidates.results | selectattr('stat.exists') | map(attribute='item') | list }}"
   ansible.builtin.copy:
     src: slow-log.cnf
-    dest: "{{ access_log_mysql_conf_dirs[0] }}/99-slow-log.cnf"
+    dest: "{{ db_conf_dir }}/99-slow-log.cnf"
     mode: "0644"
-  notify: Restart mysql
+  notify: Restart database

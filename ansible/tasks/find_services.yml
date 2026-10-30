@@ -1,0 +1,95 @@
+# サーバーのサービスと設定の場所を調べ、次の変数を設定する。名前やパスを決め打ちせず、systemd と設定ファイルから調べる
+#   app_service_candidates: WorkingDirectory が app_dir のサービス
+#   app_service: 候補が 1 つに決まり、指定されていなければその名前
+#   app_binary: ExecStart の実行ファイル。setup で Makefile を作るのに使う
+#   app_port: アプリが listen しているポート。pprotein の pprof の取得先にする
+#   app_env_files: アプリの unit の EnvironmentFile。deploy で配る
+#   db_service: MySQL のサービス名 (mysql か mariadb)。どちらも無ければ mysql
+#   db_conf_dir: MySQL が最後に読み込む設定ディレクトリ。無ければ none
+#   nginx_dump: nginx -T の出力 (読み込まれる設定ファイルの中身)。nginx が無ければ空
+# サービス名が isu で始まらない回もあるので、全サービスから探す
+- name: Show working directories of services
+  ansible.builtin.shell: |
+    set -o pipefail
+    systemctl list-unit-files --type=service --no-legend | awk '$1 !~ /@/ {print $1}' |
+      xargs -r systemctl show -p Id -p WorkingDirectory
+  args:
+    executable: /bin/bash
+  register: find_services_units
+  changed_when: false
+
+# 無い unit も LoadState=not-found として返るので、両方を 1 回で調べられる。別名の unit は Id が本来の名前になる
+- name: Show MySQL services
+  ansible.builtin.shell: |
+    set -e
+    systemctl show -p Id -p LoadState mysql.service mariadb.service
+  register: find_services_db_units
+  changed_when: false
+
+- name: Show MySQL config
+  ansible.builtin.command: cat /etc/mysql/my.cnf
+  register: find_services_my_cnf
+  changed_when: false
+  failed_when: false
+
+- name: Show nginx config
+  become: true
+  ansible.builtin.command: nginx -T
+  register: find_services_nginx_dump
+  changed_when: false
+  failed_when: false
+
+- name: Set service facts
+  ansible.builtin.set_fact:
+    app_service_candidates: "{{ find_services_units.stdout | services_in_directory(app_dir) }}"
+    db_service: "{{ (find_services_db_units.stdout | loaded_services + ['mysql']) | first }}"
+    db_conf_dir: "{{ find_services_my_cnf.stdout | last_included_dir }}"
+    nginx_dump: "{{ find_services_nginx_dump.stdout if find_services_nginx_dump.rc == 0 else '' }}"
+
+- name: Set application service
+  when: app_service is undefined and app_service_candidates | length == 1
+  ansible.builtin.set_fact:
+    app_service: "{{ app_service_candidates | first }}"
+
+- name: Find application process
+  when: app_service is defined
+  block:
+    # state を指定しないと何も変えず、status に unit のプロパティが入る
+    - name: Show application unit
+      ansible.builtin.systemd_service:
+        name: "{{ app_service }}"
+      register: find_services_app_unit
+
+    # ExecStart がシェルなどのラッパーで、子プロセスが listen することもあるので、unit の cgroup の全プロセスを見る
+    - name: Show processes of application
+      ansible.builtin.shell: |
+        for root in /sys/fs/cgroup /sys/fs/cgroup/unified /sys/fs/cgroup/systemd; do
+          if [ -d "$root$CONTROL_GROUP" ]; then
+            find "$root$CONTROL_GROUP" -name cgroup.procs -exec cat {} +
+            break
+          fi
+        done
+      environment:
+        CONTROL_GROUP: "{{ find_services_app_unit.status.ControlGroup }}"
+      register: find_services_app_pids
+      changed_when: false
+
+    # 他のユーザーのプロセスも見えるよう root で実行する
+    - name: Show listening ports
+      become: true
+      ansible.builtin.command: ss -Htlnp
+      register: find_services_listening_ports
+      changed_when: false
+
+    # アプリが Docker で動くなど unit のプロセスが listen していなければ、nginx の転送先が 1 つならそのポートにする
+    - name: Set application facts
+      vars:
+        process_port: "{{ find_services_listening_ports.stdout | listening_port(find_services_app_pids.stdout_lines) }}"
+        upstream_ports: "{{ nginx_dump | nginx_local_upstream_ports }}"
+      ansible.builtin.set_fact:
+        app_binary: "{{ find_services_app_unit.status.ExecStart | exec_start_path }}"
+        app_env_files: "{{ find_services_app_unit.status.EnvironmentFiles | default('') | environment_file_paths }}"
+        app_port: >-
+          {{ process_port if process_port | int > 0
+             else upstream_ports | first if upstream_ports | length == 1
+             else none }}

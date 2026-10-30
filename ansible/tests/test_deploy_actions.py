@@ -38,6 +38,12 @@ class TestDeployActions(unittest.TestCase):
     def test_reloads_sysctl_when_sysctl_config_changed(self):
         self.assertTrue(actions(['/etc/sysctl.d/99-isucon.conf'])['reload_sysctl'])
 
+    def test_restarts_service_whose_drop_in_changed(self):
+        result = actions(['/etc/systemd/system/mysql.service.d/override.conf'])
+
+        self.assertEqual(result['restart_services'], ['mysql', 'isucon-go'])
+        self.assertTrue(result['daemon_reload'])
+
     def test_does_not_confuse_services_with_common_prefix(self):
         result = actions(['/etc/systemd/system/nginx-exporter.service'])
 

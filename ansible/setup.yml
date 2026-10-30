@@ -14,8 +14,8 @@
 - name: Install tools on all servers
   hosts: all
   pre_tasks:
-    - name: Find application service
-      ansible.builtin.import_tasks: tasks/find_app_service.yml
+    - name: Find services
+      ansible.builtin.import_tasks: tasks/find_services.yml
   roles:
     - base
     - pprotein

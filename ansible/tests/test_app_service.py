@@ -1,7 +1,13 @@
 # PYTHONPATH に ansible/filter_plugins を含めて実行する (make test)
 import unittest
 
-from app_service import exec_start_path, listening_port, services_in_directory
+from app_service import (
+    environment_file_paths,
+    exec_start_path,
+    listening_port,
+    loaded_services,
+    services_in_directory,
+)
 
 # systemctl show は -p の順序によらず、プロパティを決まった順序で出力する
 SHOW_OUTPUT = """\
@@ -32,6 +38,33 @@ class TestServicesInDirectory(unittest.TestCase):
         self.assertEqual(services_in_directory('', '/home/isucon/webapp/go'), [])
 
 
+class TestLoadedServices(unittest.TestCase):
+    def test_returns_existing_service(self):
+        output = 'Id=mysql.service\nLoadState=loaded\n\nId=mariadb.service\nLoadState=not-found\n'
+
+        self.assertEqual(loaded_services(output), ['mysql'])
+
+    def test_resolves_alias_to_real_name(self):
+        output = 'Id=mariadb.service\nLoadState=loaded\n\nId=mariadb.service\nLoadState=loaded\n'
+
+        self.assertEqual(loaded_services(output), ['mariadb'])
+
+    def test_returns_empty_when_no_service_exists(self):
+        output = 'Id=mysql.service\nLoadState=not-found\n'
+
+        self.assertEqual(loaded_services(output), [])
+
+
+class TestEnvironmentFilePaths(unittest.TestCase):
+    def test_returns_paths_of_files(self):
+        value = '/home/isucon/env.sh (ignore_errors=no) /home/isucon/env.local (ignore_errors=yes)'
+
+        self.assertEqual(environment_file_paths(value), ['/home/isucon/env.sh', '/home/isucon/env.local'])
+
+    def test_returns_empty_without_environment_files(self):
+        self.assertEqual(environment_file_paths(''), [])
+
+
 class TestExecStartPath(unittest.TestCase):
     def test_returns_path_of_executable(self):
         value = '{ path=/home/isucon/webapp/go/isuride ; argv[]=/home/isucon/webapp/go/isuride ; ignore_errors=no }'
@@ -54,13 +87,17 @@ LISTEN 0      4096               *:12345            *:*    users:(("payment_mock
 
 class TestListeningPort(unittest.TestCase):
     def test_returns_smallest_port_of_process(self):
-        self.assertEqual(listening_port(SS_OUTPUT, 1055), 6060)
+        self.assertEqual(listening_port(SS_OUTPUT, [1055]), 6060)
+
+    def test_returns_port_of_any_process(self):
+        # unit の cgroup にはラッパーのシェルと、listen する子プロセスが入る
+        self.assertEqual(listening_port(SS_OUTPUT, ['1000', '10550']), 12345)
 
     def test_does_not_match_pid_with_same_prefix(self):
-        self.assertEqual(listening_port(SS_OUTPUT, 10550), 12345)
+        self.assertEqual(listening_port(SS_OUTPUT, [10550]), 12345)
 
     def test_returns_none_when_process_does_not_listen(self):
-        self.assertIsNone(listening_port(SS_OUTPUT, 0))
+        self.assertIsNone(listening_port(SS_OUTPUT, [0]))
 
 
 if __name__ == '__main__':

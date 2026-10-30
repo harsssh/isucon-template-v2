@@ -1,0 +1,2 @@
+# LTSV のログの設定を置くファイルを、nginx が読み込むか
+access_log_nginx_includes_conf_d: "{{ nginx_dump | nginx_includes('/etc/nginx/conf.d/ltsv-log.conf') }}"

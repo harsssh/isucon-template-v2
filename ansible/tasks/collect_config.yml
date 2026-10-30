@@ -1,26 +1,23 @@
 # primary の設定ファイルを common/ にコピーする。common/ のファイルより新しいものだけを上書きする
+# 環境変数のファイルとサービス名は tasks/find_services.yml が調べたものを使う
 - name: Collect config files into common/
   vars:
     # 存在しないパスは無視される
-    collect_paths:
-      - /home/isucon/env.sh
-      - /etc/mysql
-      - /etc/nginx
-      - /etc/sysctl.d
-    # unit ファイルを集めるサービス。isu で始まるサービスは自動で追加される
-    collect_services:
-      - mysql
-      - nginx
+    collect_paths: "{{ (app_env_files | default([])) + ['/etc/mysql', '/etc/nginx', '/etc/sysctl.d'] }}"
+    # unit ファイルを集めるサービス。ISUCON14 の matcher のように WorkingDirectory が無い補助のサービスもあるので、
+    # isu で始まるサービスも追加する
+    collect_services: "{{ ['nginx', db_service] + app_service_candidates + ([app_service] if app_service is defined else []) }}"
   block:
     - name: Find unit files of related services
       ansible.builtin.shell: |
         set -o pipefail
         {
-          printf '%s\n' {{ collect_services | join(' ') }}
+          printf '%s\n' {{ collect_services | unique | map('quote') | join(' ') }}
           systemctl list-unit-files --type=service --no-legend 'isu*' | awk '{print $1}'
         } | while read -r service_name; do
-          systemctl show --value -p FragmentPath "$service_name"
-        done | sed '/^$/d'
+          # DropInPaths は空白区切りで、drop-in が無ければ空
+          systemctl show --value -p FragmentPath -p DropInPaths "$service_name" | tr ' ' '\n'
+        done | sed '/^$/d' | sort -u
       args:
         executable: /bin/bash
       register: unit_files

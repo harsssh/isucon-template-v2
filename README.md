@@ -122,7 +122,7 @@ make deploy BRANCH=my-branch
 s1:
   host_services: [nginx, "{{ app_service }}"]
 s2:
-  host_services: [mysql]
+  host_services: ["{{ db_service }}"]  # MySQL か MariaDB のサービス名がサーバーから自動で入る
 ```
 
 `common/` の設定ファイルでは、他のホストを `s2` のように名前で指定できる (セットアップで `/etc/hosts` に登録される)。たとえば `env.sh` の DB のホストを `s2` にすれば、ホストごとにファイルを分けなくてよい。全ホストで同じにできないファイルだけ、`s1/` などのホスト名のディレクトリに置く。

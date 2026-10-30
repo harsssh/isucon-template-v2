@@ -8,7 +8,7 @@ all:
   #   s1:
   #     host_services: [nginx, "{{ app_service }}"]
   #   s2:
-  #     host_services: [mysql]
+  #     host_services: ["{{ db_service }}"]
   hosts:
     s1:
     s2:
