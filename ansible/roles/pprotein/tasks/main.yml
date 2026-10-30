@@ -1,19 +1,32 @@
-# pprotein-agent は全ホスト、pprotein サーバーは primary だけで動かす
+# /opt にバージョンごとのディレクトリを作ってリンクするのは、creates がバージョンを含むパスを見るようにするため。defaults のバージョンを変えると、セットアップ済みのサーバーでも入れ替わる
+- name: Create directories for pprotein, alp and slp
+  become: true
+  ansible.builtin.file:
+    path: "/opt/{{ item.name }}-{{ item.version }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ pprotein_tools }}"
+
 - name: Install pprotein, alp and slp
   become: true
   ansible.builtin.unarchive:
     src: "{{ item.url }}"
-    dest: /usr/local/bin
+    dest: "/opt/{{ item.name }}-{{ item.version }}"
     remote_src: true
     include: "{{ item.binaries }}"
-    creates: "/usr/local/bin/{{ item.binaries[0] }}"
-  loop:
-    - url: "https://github.com/kaz/pprotein/releases/download/v{{ pprotein_version }}/pprotein_{{ pprotein_version }}_linux_{{ release_arch }}.tar.gz"
-      binaries: [pprotein, pprotein-agent]
-    - url: "https://github.com/tkuchiki/alp/releases/download/v{{ pprotein_alp_version }}/alp_linux_{{ release_arch }}.tar.gz"
-      binaries: [alp]
-    - url: "https://github.com/tkuchiki/slp/releases/download/v{{ pprotein_slp_version }}/slp_linux_{{ release_arch }}.tar.gz"
-      binaries: [slp]
+    creates: "/opt/{{ item.name }}-{{ item.version }}/{{ item.binaries[0] }}"
+  loop: "{{ pprotein_tools }}"
+
+- name: Link pprotein, alp and slp
+  become: true
+  ansible.builtin.file:
+    src: "/opt/{{ item.0.name }}-{{ item.0.version }}/{{ item.1 }}"
+    dest: "/usr/local/bin/{{ item.1 }}"
+    state: link
+    # 以前は /usr/local/bin に直接展開していたので、そのファイルを置き換える
+    force: true
+  loop: "{{ pprotein_tools | subelements('binaries') }}"
+  notify: Restart pprotein services
 
 - name: Install systemd units
   become: true

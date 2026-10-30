@@ -1,3 +1,19 @@
-pprotein_version: "1.2.4"
-pprotein_alp_version: "1.0.21"
-pprotein_slp_version: "0.2.1"
+# kaz/pprotein#39 (slp.yml の output が反映されない問題の修正) が未マージなので、v1.2.4 に当てた fork のリリースを使う
+# マージされたら kaz/pprotein の次のリリースに戻す
+pprotein_repo: harsssh/pprotein
+pprotein_version: "1.2.4-slp-output.1"
+pprotein_alp_version: "1.0.22"
+pprotein_slp_version: "0.2.3"
+pprotein_tools:
+  - name: pprotein
+    version: "{{ pprotein_version }}"
+    url: "https://github.com/{{ pprotein_repo }}/releases/download/v{{ pprotein_version }}/pprotein_{{ pprotein_version }}_linux_{{ release_arch }}.tar.gz"
+    binaries: [pprotein, pprotein-agent]
+  - name: alp
+    version: "{{ pprotein_alp_version }}"
+    url: "https://github.com/tkuchiki/alp/releases/download/v{{ pprotein_alp_version }}/alp_linux_{{ release_arch }}.tar.gz"
+    binaries: [alp]
+  - name: slp
+    version: "{{ pprotein_slp_version }}"
+    url: "https://github.com/tkuchiki/slp/releases/download/v{{ pprotein_slp_version }}/slp_linux_{{ release_arch }}.tar.gz"
+    binaries: [slp]
