@@ -1,9 +1,0 @@
-# inventory の host_services から pprotein の取得先を作る。setup と deploy のたびに作り直す
-# 取得先は pprotein の画面ではなく inventory で変える。画面で編集しても次の deploy で上書きされる
-# pprotein は収集のたびにこのファイルを読むので、再起動しなくてよい
-- name: Install pprotein targets
-  become: true
-  ansible.builtin.template:
-    src: targets.json.j2
-    dest: /etc/pprotein/data/targets.json
-    mode: "0644"

@@ -1,0 +1,18 @@
+# pprotein の設定は全部このリポジトリが正で、setup と deploy のたびに上書きする。pprotein の画面で編集しても次の deploy で消える
+# pprotein は収集のたびにこれらのファイルを読むので、再起動しなくてよい
+
+# 取得先は inventory の host_services から作る
+- name: Install pprotein targets
+  become: true
+  ansible.builtin.template:
+    src: targets.json.j2
+    dest: /etc/pprotein/data/targets.json
+    mode: "0644"
+
+- name: Install pprotein alp and slp config
+  become: true
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/pprotein/data/{{ item }}"
+    mode: "0644"
+  loop: [alp.yml, slp.yml]

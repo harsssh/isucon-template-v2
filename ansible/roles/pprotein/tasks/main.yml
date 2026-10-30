@@ -44,19 +44,9 @@
     state: directory
     mode: "0755"
 
-- name: Install pprotein targets
-  when: inventory_hostname in groups.pprotein_server
-  ansible.builtin.import_tasks: targets.yml
-
-# pprotein の画面で編集した設定を上書きしない
 - name: Install pprotein config
-  become: true
-  ansible.builtin.copy:
-    src: "{{ item }}"
-    dest: "/etc/pprotein/data/{{ item }}"
-    mode: "0644"
-    force: false
-  loop: [alp.yml, slp.yml]
+  when: inventory_hostname in groups.pprotein_server
+  ansible.builtin.import_tasks: config.yml
 
 - name: Start pprotein-agent
   become: true

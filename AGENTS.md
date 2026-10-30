@@ -75,6 +75,7 @@ Ansible などは Nix の devShell にあり、direnv で読み込まれる。�
 - アプリの `/initialize` からは `http://s1:9000/api/group/collect` を呼ぶ。アプリが s1 以外で動いても計測が始まるように
 - アクセスログは nginx の LTSV、スロークエリログは MySQL の slow log。alp と slp が全サーバーに入っている
 - アプリが pprotein に記録させる処理 (`/initialize` からの collect と pprof) は `/enable-pprotein` skill で入れる
+- alp と slp の設定は `ansible/roles/pprotein/files/alp.yml` と `slp.yml` に書いて deploy する。pprotein の画面で編集しても次の deploy で上書きされる
 - alp の matching_groups は `/alp-matching-groups` skill で作る
 - 計測結果からボトルネックを判断するときは、推測ではなく pprotein、alp、slp の結果を根拠にする
 - ベンチマークの後の分析は `/analyze-pprotein` skill で行う

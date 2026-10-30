@@ -45,4 +45,4 @@ ssh s1 "alp ltsv --file /var/log/nginx/access.log -m '<パターンをカンマ�
 
 ## 反映
 
-出力した `matching_groups` は、pprotein の画面 (`http://localhost:9000`) の httplog の設定に貼る。ユーザーが求めたときは `ansible/roles/pprotein/files/alp.yml` にも書く。ただしこのファイルは、`/etc/pprotein/data/alp.yml` が無いホストにしか配られない。
+出力した `matching_groups` は `ansible/roles/pprotein/files/alp.yml` に書き、コミットして deploy する。deploy が pprotein のホストの `/etc/pprotein/data/alp.yml` を上書きする。pprotein の画面で編集しても次の deploy で消えるので、画面では編集しない。
