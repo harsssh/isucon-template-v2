@@ -16,7 +16,7 @@
   args:
     creates: "{{ base_backup_path }}"
 
-# deploy で配布するホスト別の設定 (s1/ など) は hostname で選ばれるので、最初に設定する
+# deploy で配布するホスト別の設定 (config/s1/ など) は hostname で選ばれるので、最初に設定する
 - name: Set hostname
   become: true
   ansible.builtin.hostname:
@@ -42,7 +42,7 @@
     that: groups.all | map('extract', hostvars) | selectattr('ansible_facts.default_ipv4', 'undefined') | length == 0
     fail_msg: 他のホストの IP が分からないので、--limit を付けずに全ホストで実行してください
 
-# common/ の設定ファイルで他のホストを s2 のように名前で指定できるようにし、ホスト別の設定を減らす
+# config/common/ の設定ファイルで他のホストを s2 のように名前で指定できるようにし、ホスト別の設定を減らす
 # 自分自身は 127.0.0.1 にして、自ホスト内の通信がループバックを通るようにする
 - name: Resolve all hosts by name
   become: true

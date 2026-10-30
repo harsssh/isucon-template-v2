@@ -1,6 +1,6 @@
-# primary の設定ファイルを common/ にコピーする。common/ のファイルより新しいものだけを上書きする
+# primary の設定ファイルを config/common/ にコピーする。config/common/ のファイルより新しいものだけを上書きする
 # 環境変数のファイルとサービス名は tasks/find_services.yml が調べたものを使う
-- name: Collect config files into common/
+- name: Collect config files into config/common/
   vars:
     # 存在しないパスは無視される
     collect_paths: "{{ (app_env_files | default([])) + ['/etc/mysql', '/etc/nginx', '/etc/sysctl.d'] }}"
@@ -26,5 +26,5 @@
     - name: Copy config files
       ansible.builtin.script:
         cmd: collect_config.sh {{ (collect_paths + unit_files.stdout_lines) | map('quote') | join(' ') }}
-        chdir: "{{ repo_dir }}"
+        chdir: "{{ repo_dir }}/config"
       changed_when: true

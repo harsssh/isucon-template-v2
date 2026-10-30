@@ -22,7 +22,7 @@ pprotein の httplog は alp で集計する。`/api/users/123` と `/api/users/
 3. 並べる順序を決める
    - alp は上から順に照合し、最初にマッチしたグループに入れる
    - パラメータを含むパターンにマッチしてしまう固定パス (`/api/users/me` と `/api/users/[^/]+` など) は、そのパターンより前に置く
-4. nginx が直接返す静的ファイルも、パスの種類ごとにまとめる (`^/assets/.+$`, `^/image/.+$` など)。nginx の設定 (`common/etc/nginx/`) の `location` を見て決める
+4. nginx が直接返す静的ファイルも、パスの種類ごとにまとめる (`^/assets/.+$`, `^/image/.+$` など)。nginx の設定 (`config/common/etc/nginx/`) の `location` を見て決める
 5. 結果を YAML で出力する
 
 ```yaml

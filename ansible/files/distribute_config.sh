@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# リポジトリの common/ と <host>/ にある設定ファイルを <dest_root> 以下の同じパスに置き、
+# カレントディレクトリ (リポジトリの config/) の common/ と <host>/ にある設定ファイルを <dest_root> 以下の同じパスに置き、
 # 内容が変わったファイルのパスを 1 行ずつ出力する。同じパスのファイルは <host>/ を優先する
 # Usage: distribute_config.sh <host> [dest_root]
 set -euo pipefail

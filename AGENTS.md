@@ -5,17 +5,17 @@ ISUCON の競技用リポジトリ。競技サーバーの webapp と設定フ�
 ## ディレクトリ
 
 - `app/`: 競技サーバーの `~/webapp` を取り込んだもの。サーバーの `~/webapp` はサーバー上の clone の `app/` へのシンボリックリンク
-- `common/`: 全サーバーに配る設定ファイル。`common/etc/nginx/nginx.conf` は `/etc/nginx/nginx.conf` に置かれる
-- `s1/` 〜 `s5/`: そのホストだけに配る設定ファイル。`common/` と同じパスなら、こちらを優先する
+- `config/common/`: 全サーバーに配る設定ファイル。`config/common/etc/nginx/nginx.conf` は `/etc/nginx/nginx.conf` に置かれる
+- `config/s1/` 〜 `config/s5/`: そのホストだけに配る設定ファイル。`config/common/` と同じパスなら、こちらを優先する
 - `ansible/`: セットアップとデプロイの playbook。ホストとサービスの配置は `ansible/inventory.yml`
-- `docs/tuning/`: nginx, MySQL, sysctl の設定例。使うときは `common/` にコピーする
+- `docs/tuning/`: nginx, MySQL, sysctl の設定例。使うときは `config/common/` にコピーする
 - `survey/`: `make survey` で集めた各サーバーの状態 (サービス、listen しているポート、unit ファイル、環境変数のファイル、テーブルのサイズなど)。サーバーの構成を調べるときは、まずここを読む
 
-`app/` と `common/` は初回の `make setup` で primary (既定は s1) から取り込まれる。
+`app/` と `config/common/` は初回の `make setup` で primary (既定は s1) から取り込まれる。
 
 ## 作業の流れ
 
-1. 手元で `app/` や `common/` を編集してコミットする
+1. 手元で `app/` や `config/common/` を編集してコミットする
 2. push する
 3. `make deploy` (main) か `make deploy BRANCH=<branch>` で全サーバーにデプロイする
 4. ベンチマークはポータルから人が実行する
@@ -58,14 +58,14 @@ Ansible などは Nix の devShell にあり、direnv で読み込まれる。�
 ## デプロイが行うこと
 
 - アプリ: `app/go` で `make` を実行し、WorkingDirectory が `~/webapp/go` のサービスを毎回再起動する。サービス名は自動で見つける。見つからないときは `ansible/group_vars/all.yml` の `app_service` に書く
-- 設定ファイル: `common/` とホスト名のディレクトリを配り、変わったファイルに対応するサービスだけを再起動する。unit ファイルが変わったら daemon-reload、`/etc/sysctl*` が変わったら `sysctl --system` を実行する
-- 配布はファイルの上書きだけで、`common/` から消したファイルはサーバーに残る。消すときはサーバー上でも消す
+- 設定ファイル: `config/common/` とホスト名のディレクトリを配り、変わったファイルに対応するサービスだけを再起動する。unit ファイルが変わったら daemon-reload、`/etc/sysctl*` が変わったら `sysctl --system` を実行する
+- 配布はファイルの上書きだけで、`config/common/` から消したファイルはサーバーに残る。消すときはサーバー上でも消す
 - `/var/log/nginx/access.log` と `/var/log/mysql/mysql-slow.log` を空にする
 
 ## 複数台構成
 
 - サービスの配置は `ansible/inventory.yml` のホストごとの `host_services` で変える。他のホストに割り当てたサービスは、デプロイで停止して自動起動を無効にする
-- `/etc/hosts` に全ホストが登録されているので、`common/` の設定ファイルでは他のホストを `s2` のように名前で書く。IP を書くためだけにホスト別のファイルを作らない
+- `/etc/hosts` に全ホストが登録されているので、`config/common/` の設定ファイルでは他のホストを `s2` のように名前で書く。IP を書くためだけにホスト別のファイルを作らない
 - MySQL を別ホストに移すときは、`bind-address` と、接続元のホストからのユーザーの権限も変える
 
 ## 計測

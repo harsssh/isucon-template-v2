@@ -113,7 +113,7 @@ make deploy BRANCH=my-branch
 
 1. origin のブランチを checkout する (サーバー上の変更は捨てる)
 2. アプリを割り当てたホストでアプリをビルドする (`~/webapp/go` で `make`)
-3. `common/` とホスト名のディレクトリ (`s1/` など) の設定ファイルを配布する。同じパスのファイルはホスト名のディレクトリを優先する
+3. `config/common/` とホスト名のディレクトリ (`config/s1/` など) の設定ファイルを配布する。同じパスのファイルはホスト名のディレクトリを優先する
 4. サービスを再起動する。アプリ (WorkingDirectory が `~/webapp/go` のサービス) は毎回、nginx や MySQL は設定ファイルか unit ファイルが変わったときだけ再起動する
 5. access.log と slow log を空にする
 
@@ -126,7 +126,7 @@ s2:
   host_services: ["{{ db_service }}"]  # MySQL か MariaDB のサービス名がサーバーから自動で入る
 ```
 
-`common/` の設定ファイルでは、他のホストを `s2` のように名前で指定できる (セットアップで `/etc/hosts` に登録される)。たとえば `env.sh` の DB のホストを `s2` にすれば、ホストごとにファイルを分けなくてよい。全ホストで同じにできないファイルだけ、`s1/` などのホスト名のディレクトリに置く。
+`config/common/` の設定ファイルでは、他のホストを `s2` のように名前で指定できる (セットアップで `/etc/hosts` に登録される)。たとえば `env.sh` の DB のホストを `s2` にすれば、ホストごとにファイルを分けなくてよい。全ホストで同じにできないファイルだけ、`config/s1/` などのホスト名のディレクトリに置く。
 
 Go 以外の実装を使うときやアプリのサービスが見つからないときは、`ansible/group_vars/all.yml` の `app_dir` と `app_service` を変える。
 
@@ -142,7 +142,7 @@ Go 以外の実装を使うときやアプリのサービスが見つからな�
 
 サーバー上では alias (`sc`, `scs`, `jcfu` など) で systemctl と journalctl を操作する。
 
-nginx, MySQL, sysctl のチューニング用の設定例は [docs/tuning](docs/tuning) にある。使うときは `common/` に手でコピーする。
+nginx, MySQL, sysctl のチューニング用の設定例は [docs/tuning](docs/tuning) にある。使うときは `config/common/` に手でコピーする。
 
 ## リンク集
 

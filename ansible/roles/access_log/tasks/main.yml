@@ -1,5 +1,5 @@
 # nginx と MySQL のログを alp, slp で集計できる形式にする
-# 設定は /etc に直接書き、collect_config で common/ に取り込む
+# 設定は /etc に直接書き、collect_config で config/common/ に取り込む
 # 置き場所は tasks/find_services.yml が調べた nginx_dump, db_conf_dir, db_service で決める
 - name: Warn about nginx config without conf.d
   when: not access_log_nginx_includes_conf_d

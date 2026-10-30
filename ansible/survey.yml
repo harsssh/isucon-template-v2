@@ -125,7 +125,7 @@
             ok: "{{ remote_mysql_users is not none and remote_mysql_users | length > 0 }}"
           - assumption: >-
               /etc/nginx, /etc/mysql, /etc/sysctl.d, アプリの環境変数のファイル {{ app_env_files | default([]) }} が primary ({{ primary_host }}) と同じ
-              (最初の deploy で primary のものに上書きされる。ホストごとに違う値は s2/ などに置く。
+              (最初の deploy で primary のものに上書きされる。ホストごとに違う値は config/s2/ などに置く。
               {{ '違うもの: ' ~ differing_files if primary_config_checksums is not none else 'primary を含めずに実行したので未確認' }})
             ok: "{{ primary_config_checksums is not none and differing_files | length == 0 }}"
 

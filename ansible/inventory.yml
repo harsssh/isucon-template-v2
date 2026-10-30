@@ -1,5 +1,5 @@
 # ホスト名は ~/.ssh/config の Host 名と一致させる
-# セットアップ時にサーバーの hostname もこの名前に変わり、deploy で s1/ などのホスト別の設定が配布される
+# セットアップ時にサーバーの hostname もこの名前に変わり、deploy で config/s1/ などのホスト別の設定が配布される
 # 変数は group_vars/all.yml に書き、ホストごとに変えるものだけここに書く
 all:
   # サービスの配置をホストごとに変えるときは host_services を上書きする

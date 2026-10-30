@@ -1,4 +1,5 @@
 #!/bin/bash -e
+# 引数の設定ファイルを、カレントディレクトリ (リポジトリの config/) の common/ 以下の同じパスにコピーする
 
 for config_path in "$@"; do
 	dst_path="$(pwd)/common/${config_path#/}"
