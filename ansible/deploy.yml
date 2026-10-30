@@ -99,7 +99,7 @@
 
     # サービスの配置の変更を、pprotein が計測データを取るホストに反映する
     - name: Update pprotein targets
-      when: inventory_hostname in groups.primary
+      when: inventory_hostname in groups.pprotein_server
       ansible.builtin.include_role:
         name: pprotein
         tasks_from: targets

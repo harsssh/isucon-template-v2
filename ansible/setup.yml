@@ -11,6 +11,11 @@
         that: repo_url is match('^(git@|ssh://)')
         fail_msg: "origin が SSH 形式ではありません: {{ repo_url }}"
 
+    - name: Pprotein server must be a single host
+      ansible.builtin.assert:
+        that: groups.pprotein_server | default([]) | length == 1
+        fail_msg: "inventory.yml の pprotein_server には 1 台だけ指定してください: {{ groups.pprotein_server | default([]) }}"
+
 - name: Install tools on all servers
   hosts: all
   pre_tasks:

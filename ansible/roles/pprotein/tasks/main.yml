@@ -45,7 +45,7 @@
     mode: "0755"
 
 - name: Install pprotein targets
-  when: inventory_hostname in groups.primary
+  when: inventory_hostname in groups.pprotein_server
   ansible.builtin.import_tasks: targets.yml
 
 # pprotein の画面で編集した設定を上書きしない
@@ -67,10 +67,20 @@
     daemon_reload: true
 
 - name: Start pprotein
-  when: inventory_hostname in groups.primary
+  when: inventory_hostname in groups.pprotein_server
   become: true
   ansible.builtin.systemd_service:
     name: pprotein
     state: started
     enabled: true
+    daemon_reload: true
+
+# pprotein_server を別のホストに変えたとき、元のホストの pprotein を止める
+- name: Stop pprotein on other hosts
+  when: inventory_hostname not in groups.pprotein_server
+  become: true
+  ansible.builtin.systemd_service:
+    name: pprotein
+    state: stopped
+    enabled: false
     daemon_reload: true

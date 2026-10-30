@@ -15,7 +15,12 @@ all:
     # s4:
     # s5:
   children:
-    # webapp の取り込み元、設定ファイルの収集元、pprotein サーバーを置くホスト。1 台だけ指定する
+    # webapp の取り込み元、設定ファイルの収集元。1 台だけ指定する
     primary:
+      hosts:
+        s1:
+    # pprotein (計測データの収集と画面) を動かすホスト。1 台だけ指定する。pprotein-agent は全ホストで動く
+    # 変えたら make setup を実行し、アプリの /initialize が呼ぶホストと ~/.ssh/config の LocalForward 9000 も変える
+    pprotein_server:
       hosts:
         s1:

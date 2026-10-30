@@ -44,7 +44,7 @@ Host 名は `ansible/inventory.yml` のホスト名 (`s1` 〜 `s5`) と揃える
      HostName <bench の Public IP>
    ```
    - 1 行目の Host 名は登録するものに合わせる
-   - `LocalForward 9000` は pprotein が動く primary (既定は `s1`) だけに付ける
+   - `LocalForward 9000` は pprotein が動くホスト (`ansible/inventory.yml` の `pprotein_server`。既定は `s1`) だけに付ける
 5. 接続を確かめる。初回は host key の確認で止まるので `accept-new` を付ける
    ```bash
    for h in s1 s2 bench; do ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 $h hostname; done

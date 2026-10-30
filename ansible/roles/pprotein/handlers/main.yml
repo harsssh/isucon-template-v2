@@ -4,4 +4,4 @@
     name: "{{ item }}"
     state: restarted
     daemon_reload: true
-  loop: "{{ ['pprotein-agent'] + (['pprotein'] if inventory_hostname in groups.primary else []) }}"
+  loop: "{{ ['pprotein-agent'] + (['pprotein'] if inventory_hostname in groups.pprotein_server else []) }}"

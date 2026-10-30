@@ -50,7 +50,8 @@ direnv を使わない場合は、各コマンドの前に `nix develop -c` を�
 `setup.yml` が行うこと:
 
 - 全サーバー: hostname の設定 (再起動後も保持)、全ホストの名前の `/etc/hosts` への登録、ツール (bottom, tmux, alp, slp, pprotein-agent) と alias、tmux の設定のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え (git で管理していない大きいファイルなどは既存の `~/webapp` からコピー)
-- primary (`inventory.yml` の `primary`): `~/webapp` と `/etc` の設定ファイルのリポジトリへの取り込みと push、nginx の LTSV ログと MySQL の slow log の設定、pprotein の起動
+- primary (`inventory.yml` の `primary`): `~/webapp` と `/etc` の設定ファイルのリポジトリへの取り込みと push、nginx の LTSV ログと MySQL の slow log の設定
+- pprotein サーバー (`inventory.yml` の `pprotein_server`): pprotein の起動
 
 何度実行しても同じ状態になるので、途中で失敗したら原因を直して再実行すればよい。
 
@@ -74,7 +75,7 @@ func main() {
 }
 
 func initializeHandler(c echo.Context) error {
-    // 計測開始。pprotein は primary (s1) で動くので、アプリがどのホストで動いても s1 を呼ぶ
+    // 計測開始。pprotein は inventory の pprotein_server (s1) で動くので、アプリがどのホストで動いても s1 を呼ぶ
     http.Get("http://s1:9000/api/group/collect")
 }
 ```
