@@ -10,7 +10,7 @@ ISUCON 本番で使う、競技サーバーのセットアップと計測の手�
 接続先とユーザー名は競技環境に合わせる。
 Host 名は `ansible/inventory.yml` のホスト名と揃える (最大 5 台を想定して `s1` から `s5`)。
 ```
-Host s1 s2 s3 s4 s5 bench
+Host s1 s2 s3 s4 s5
     User isucon
     ForwardAgent yes
 
@@ -21,9 +21,6 @@ Host s1
 
 Host s2
     Hostname yyy.yyy.yyy.yyy
-
-Host bench
-    Hostname zzz.zzz.zzz.zzz
 ```
 
 ## 初回計測までの手順
