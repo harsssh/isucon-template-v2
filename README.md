@@ -84,7 +84,7 @@ func initializeHandler(c echo.Context) error {
 go mod tidy
 ```
 
-pprotein の取得先 (`targets.json`) は、setup と deploy のたびに `ansible/inventory.yml` の `host_services` から作り直す。アプリのホストから pprof、nginx のホストからアクセスログ、MySQL のホストから slow log を取る。alp と slp の設定は `ansible/roles/pprotein/files/alp.yml` と `slp.yml` を同じく setup と deploy のたびに配る。pprotein の画面で編集しても上書きされるので、取得先は inventory で、alp と slp の設定はこれらのファイルで変える。
+pprotein の取得先 (`targets.json`) は、setup と deploy のたびに `ansible/inventory.yml` の `host_services` から作り直す。アプリのホストから pprof、nginx のホストからアクセスログ、MySQL のホストから slow log を取る。alp と slp の設定は `config/common/etc/pprotein/data/alp.yml` と `slp.yml` で、他の設定ファイルと同じく deploy のたびに配る。pprotein の画面で編集しても上書きされるので、取得先は inventory で、alp と slp の設定はこれらのファイルで変える。
 
 pprotein と pprotein-agent には、localhost とプライベートネットワークからしか接続できない。
 

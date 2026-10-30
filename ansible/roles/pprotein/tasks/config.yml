@@ -1,4 +1,4 @@
-# pprotein の設定は全部このリポジトリが正で、setup と deploy のたびに上書きする。pprotein の画面で編集しても次の deploy で消える
+# pprotein の設定は全部このリポジトリが正で、pprotein の画面で編集しても次の deploy で消える
 # pprotein は収集のたびにこれらのファイルを読むので、再起動しなくてよい
 
 # 取得先は inventory の host_services から作る
@@ -9,10 +9,14 @@
     dest: /etc/pprotein/data/targets.json
     mode: "0644"
 
-- name: Install pprotein alp and slp config
+# alp.yml と slp.yml は config/common/ にあり、deploy がデプロイするブランチの内容を配る
+# setup はサーバーにリポジトリを clone する前に動くので、無いときだけ手元のファイルを置く。
+# 上書きすると、手元で checkout しているブランチの内容で、deploy したブランチの設定を戻してしまう
+- name: Install initial pprotein alp and slp config
   become: true
   ansible.builtin.copy:
-    src: "{{ item }}"
+    src: "{{ playbook_dir }}/../config/common/etc/pprotein/data/{{ item }}"
     dest: "/etc/pprotein/data/{{ item }}"
     mode: "0644"
+    force: false
   loop: [alp.yml, slp.yml]

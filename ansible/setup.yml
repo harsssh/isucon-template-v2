@@ -32,19 +32,19 @@
 - name: Import webapp on primary
   hosts: primary
   vars:
-    is_first_import: "{{ pushed_config.stdout_lines | difference(['config/common/.gitkeep']) | length == 0 }}"
+    is_first_import: "{{ pushed_webapp.stdout_lines | difference(['app/.gitkeep']) | length == 0 }}"
   roles:
     - repo
   tasks:
     # push 済みなら取り込まない。競技中の再実行で、サーバー上の編集を push しないため
     # push の前に失敗したときは、再実行で続きから取り込む
-    - name: Check whether config files are already pushed
+    - name: Check whether webapp is already pushed
       ansible.builtin.shell: |
         set -e
-        git ls-tree -r --name-only origin/main -- config/common
+        git ls-tree -r --name-only origin/main -- app
       args:
         chdir: "{{ repo_dir }}"
-      register: pushed_config
+      register: pushed_webapp
       changed_when: false
 
     - name: Commit original webapp and config

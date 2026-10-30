@@ -97,7 +97,7 @@
         argv: "{{ ['truncate', '-c', '-s', '0'] + rotated_logs }}"
       changed_when: true
 
-    # サービスの配置の変更と、リポジトリの alp.yml, slp.yml を pprotein に反映する
+    # サービスの配置の変更を pprotein の取得先に反映する。alp.yml, slp.yml は config/common/ として上で配っている
     - name: Update pprotein config
       when: inventory_hostname in groups.pprotein_server
       ansible.builtin.include_role:

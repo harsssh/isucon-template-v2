@@ -10,7 +10,7 @@ pprotein は `/initialize` から始まる 1 回の計測で、全ホストの h
 ## 前提
 
 - アプリが `/initialize` から pprotein の collect を呼び、`/debug/pprof/` を返すこと。`curl` で entry が空なら `enable-pprotein` skill を先に使う
-- alp の `matching_groups` が設定されていること。URI がパラメータごとにばらけていたら、`alp-matching-groups` skill で作り、pprotein の設定を更新する (`/api/httplog/config` に POST)。pprotein は集計の結果を保存するので、設定を変えても記録済みの entry の結果は変わらない。記録済みの回は、生のログを alp で集計し直す
+- alp の `matching_groups` が設定されていること。URI がパラメータごとにばらけていたら、`alp-matching-groups` skill で作り、`config/common/etc/pprotein/data/alp.yml` に書いて deploy する。pprotein は集計の結果を保存するので、設定を変えても記録済みの entry の結果は変わらない。記録済みの回は、生のログを alp で集計し直す
   ```bash
   ssh -o ClearAllForwardings=yes s1 'curl -s localhost:9000/api/httplog/data/<ID> | alp ltsv --config /etc/pprotein/data/alp.yml --format tsv'
   ```
