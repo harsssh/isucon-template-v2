@@ -59,6 +59,15 @@
       register: survey_config_checksums
       changed_when: false
 
+    # DB を別ホストに移すと、アプリは他のホストから接続する。そのためのユーザーがあるかを見る
+    # MySQL が止まっていると失敗するので、rc で判定する
+    - name: List MySQL users
+      become: true
+      ansible.builtin.command: mysql -N -B -e 'SELECT user, host FROM mysql.user'
+      register: survey_mysql_users
+      changed_when: false
+      failed_when: false
+
     - name: Check paths
       ansible.builtin.stat:
         path: "{{ item }}"
@@ -75,6 +84,7 @@
         missing_services: "{{ play_services | difference(unit_names) if app_service is defined else [] }}"
         primary_host: "{{ groups.primary | first }}"
         primary_config_checksums: "{{ hostvars[primary_host].survey_config_checksums.stdout | default(none) }}"
+        remote_mysql_users: "{{ survey_mysql_users.stdout | remote_mysql_users if survey_mysql_users.rc == 0 else none }}"
         differing_files: >-
           {{ survey_config_checksums.stdout | differing_config_files(primary_config_checksums)
              if primary_config_checksums is not none else [] }}
@@ -108,6 +118,11 @@
             ok: "{{ nginx_dump | nginx_includes('/etc/nginx/conf.d/ltsv-log.conf') }}"
           - assumption: "/etc/mysql/my.cnf の !includedir から slow log の設定先が決まる ({{ db_conf_dir or '不明' }}。サービス名: {{ db_service }})"
             ok: "{{ db_conf_dir is not none }}"
+          - assumption: >-
+              MySQL に他のホストから接続できるユーザーがある
+              ({{ remote_mysql_users if remote_mysql_users is not none else 'mysql の実行に失敗したので未確認' }}。
+              DB を別ホストに移すときに使う。無ければ DB を置くホストで CREATE USER と GRANT を実行する)
+            ok: "{{ remote_mysql_users is not none and remote_mysql_users | length > 0 }}"
           - assumption: >-
               /etc/nginx, /etc/mysql, /etc/sysctl.d, アプリの環境変数のファイル {{ app_env_files | default([]) }} が primary ({{ primary_host }}) と同じ
               (最初の deploy で primary のものに上書きされる。ホストごとに違う値は s2/ などに置く。

@@ -1,5 +1,9 @@
 import re
 
+# MySQL と Debian のパッケージが作るユーザー。アプリは使わない
+SYSTEM_USERS = {'root', 'mysql.sys', 'mysql.session', 'mysql.infoschema', 'debian-sys-maint'}
+LOCAL_HOSTS = {'localhost', '127.0.0.1', '::1'}
+
 
 def last_included_dir(my_cnf):
     """
@@ -11,6 +15,18 @@ def last_included_dir(my_cnf):
     return dirs[-1].rstrip('/') if dirs else None
 
 
+def remote_mysql_users(user_hosts):
+    """
+    `mysql -N -B -e 'SELECT user, host FROM mysql.user'` の出力から、
+    他のホストから接続できるユーザーを `user@host` の形で返す。システムのユーザーは除く
+
+    DB を別ホストに移すと、アプリはこのどれかで接続することになる
+    """
+    rows = [line.split('\t') for line in user_hosts.splitlines() if line]
+    return [f'{user}@{host}' for user, host in rows
+            if user not in SYSTEM_USERS and host not in LOCAL_HOSTS]
+
+
 class FilterModule:
     def filters(self):
-        return {'last_included_dir': last_included_dir}
+        return {'last_included_dir': last_included_dir, 'remote_mysql_users': remote_mysql_users}
