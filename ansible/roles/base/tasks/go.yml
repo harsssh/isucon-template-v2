@@ -1,4 +1,5 @@
-# go 1.21 以降は go.mod の toolchain を自動で取得するので、既存の Go が 1.21 未満のときだけ使う
+# 既定では実行しない。サーバーの Go が 1.21 未満のときだけ `ansible-playbook ansible/setup.yml --tags go` で実行する
+# go 1.21 以降は go.mod の go 行と toolchain 行が求めるバージョンを自動で取得するので、入れ替えなくてよい
 - name: Check installed Go version
   ansible.builtin.command: /usr/local/go/bin/go version
   register: base_installed_go
