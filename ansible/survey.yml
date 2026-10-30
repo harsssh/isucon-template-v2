@@ -32,6 +32,19 @@
       changed_when: false
       failed_when: false
 
+    # 手元の ssh-agent の鍵を転送して接続する。known_hosts は変更しない
+    # clone: false では clone せず、ls-remote で接続だけ確かめる。接続できると after に main の commit が入る
+    - name: Check access to origin
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        version: main
+        dest: /nonexistent
+        clone: false
+        update: false
+        ssh_opts: -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null
+      register: survey_origin_access
+      failed_when: false
+
     - name: Check paths
       ansible.builtin.stat:
         path: "{{ item }}"
@@ -51,6 +64,8 @@
         survey_checks:
           - assumption: "OS が Debian 系で、アーキテクチャが x86_64 か aarch64 ({{ ansible_facts.distribution }}, {{ ansible_facts.architecture }})"
             ok: "{{ ansible_facts.os_family == 'Debian' and ansible_facts.architecture in ['x86_64', 'aarch64'] }}"
+          - assumption: "サーバーから origin ({{ repo_url }}) に接続できる (手元の ssh-agent の鍵を転送する。ssh-add -l で鍵を確かめる)"
+            ok: "{{ survey_origin_access.after is defined }}"
           - assumption: "WorkingDirectory が {{ app_dir }} のサービスが 1 つに決まる (候補: {{ app_service_candidates }})"
             ok: "{{ app_service is defined }}"
           - assumption: "{{ app_dir }}/Makefile がある (deploy で make を実行する)"

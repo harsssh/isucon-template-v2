@@ -39,7 +39,7 @@
 - name: Install apt packages
   become: true
   ansible.builtin.apt:
-    name: [git, rsync, tree, jq, graphviz, wget, watch]
+    name: [git, rsync, tree, jq, graphviz, wget, watch, tmux]
     update_cache: true
     cache_valid_time: 3600
     # 起動直後は unattended-upgrades が apt のロックを持っていることがある
@@ -51,17 +51,23 @@
     deb: "https://github.com/ClementTsang/bottom/releases/download/{{ base_bottom_version }}/bottom_{{ base_bottom_version }}-1_{{ release_arch }}.deb"
     lock_timeout: 300
 
-- name: Create bottom config directory
+- name: Create config directories
   ansible.builtin.file:
-    path: ~/.config/bottom
+    path: "{{ item }}"
     state: directory
     mode: "0755"
+  loop:
+    - ~/.config/bottom
+    - ~/.config/tmux
 
-- name: Install bottom config
+- name: Install config files
   ansible.builtin.copy:
-    src: bottom.toml
-    dest: ~/.config/bottom/bottom.toml
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
     mode: "0644"
+  loop:
+    - { src: bottom.toml, dest: ~/.config/bottom/bottom.toml }
+    - { src: tmux.conf, dest: ~/.config/tmux/tmux.conf }
 
 - name: Configure git
   community.general.git_config:
@@ -90,6 +96,11 @@
       alias dc="docker compose"
       alias g="git"
       alias b="btm"
+      # ssh でログインするたびに、転送された ssh-agent のソケットを固定のパスに張る。tmux はこのパスを使う
+      # ansible の接続 (SSH_TTY が無い) で張り替えると、接続が切れた後に壊れたリンクが残るので除く
+      if [ -n "$SSH_TTY" ] && [ -z "$TMUX" ] && [ -S "$SSH_AUTH_SOCK" ]; then
+        ln -sf "$SSH_AUTH_SOCK" ~/.ssh/agent.sock
+      fi
 
 - name: Install Go
   ansible.builtin.import_tasks: go.yml

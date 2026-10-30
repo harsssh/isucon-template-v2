@@ -30,6 +30,8 @@ Host s2
 コマンドはすべて手元のリポジトリで実行する。Ansible などは Nix の devShell に入っていて、`direnv allow` しておくとリポジトリに入ったときに自動で読み込まれる。
 direnv を使わない場合は、各コマンドの前に `nix develop -c` を付ける。
 
+サーバー上の git は、手元の ssh-agent の鍵を転送して GitHub に接続する。`ssh-add -l` で GitHub の鍵が表示されることを確かめておく。デプロイキーは使わない。
+
 1. `ansible/inventory.yml` の `hosts` を使うサーバーに合わせる
 2. サーバーの状態を調べる。ansible の前提と合わない点が表示されたら、`ansible/group_vars/all.yml` などを直す
    ```bash
@@ -45,7 +47,7 @@ direnv を使わない場合は、各コマンドの前に `nix develop -c` を�
 
 `setup.yml` が行うこと:
 
-- 全サーバー: hostname の設定 (再起動後も保持)、全ホストの名前の `/etc/hosts` への登録、ツール (bottom, alp, slp, pprotein-agent) と alias のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え (git で管理していない大きいファイルなどは既存の `~/webapp` からコピー)
+- 全サーバー: hostname の設定 (再起動後も保持)、全ホストの名前の `/etc/hosts` への登録、ツール (bottom, tmux, alp, slp, pprotein-agent) と alias、tmux の設定のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え (git で管理していない大きいファイルなどは既存の `~/webapp` からコピー)
 - primary (`inventory.yml` の `primary`): `~/webapp` と `/etc` の設定ファイルのリポジトリへの取り込みと push、nginx の LTSV ログと MySQL の slow log の設定、pprotein の起動
 
 何度実行しても同じ状態になるので、途中で失敗したら原因を直して再実行すればよい。
