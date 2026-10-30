@@ -26,6 +26,9 @@
             pkgs.gnumake
             pkgs.python3
             pkgs.ruby
+            # デプロイ前に手元で app/go のコンパイルエラーを見つけるため
+            pkgs.go
+            pkgs.gopls
           ];
         };
       });
