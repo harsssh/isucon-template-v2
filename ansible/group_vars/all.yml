@@ -1,6 +1,6 @@
 # ホストで動かすサービス。ホストごとに変えるときは inventory.yml の host 変数で上書きする
 # どのホストにも割り当てられていないサービスは触らない。他のホストに割り当てられたサービスは deploy で停止する
-services:
+host_services:
   - nginx
   - mysql
   - "{{ app_service }}"
@@ -13,10 +13,18 @@ app_dir: "{{ webapp_dir }}/go"
 
 # 以下は通常変えない
 # いずれかのホストに割り当てたサービス
-assigned_services: "{{ groups.all | map('extract', hostvars, 'services') | flatten | unique }}"
+assigned_services: "{{ groups.all | map('extract', hostvars, 'host_services') | flatten | unique }}"
 # サーバー上のリポジトリは、手元のリポジトリの origin を clone したもの
 repo_url: "{{ lookup('ansible.builtin.pipe', 'git remote get-url origin') }}"
 repo_dir: "/home/isucon/{{ repo_url | basename | regex_replace('\\.git$', '') }}"
 webapp_dir: /home/isucon/webapp
+# Go を探すディレクトリ。setup で ~/.bashrc の PATH に先頭から順に入れる
+go_bin_dirs:
+  # setup --tags go で入れる Go
+  - /usr/local/go/bin
+  # ISUCON14 の参照実装の Go
+  - /home/isucon/local/golang/bin
+  # go install したコマンド
+  - /home/isucon/go/bin
 # GitHub Releases の名前に使われるアーキテクチャ名
 release_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_facts.architecture] }}"

@@ -110,13 +110,13 @@ make deploy BRANCH=my-branch
 4. サービスを再起動する。アプリ (WorkingDirectory が `~/webapp/go` のサービス) は毎回、nginx や MySQL は設定ファイルか unit ファイルが変わったときだけ再起動する
 5. access.log と slow log を空にする
 
-サービスの配置は `ansible/inventory.yml` の `services` で変える。他のホストに割り当てたサービスは、デプロイ時に停止して自動起動を無効にする。
+サービスの配置は `ansible/inventory.yml` の `host_services` で変える。他のホストに割り当てたサービスは、デプロイ時に停止して自動起動を無効にする。
 
 ```yaml
 s1:
-  services: [nginx, "{{ app_service }}"]
+  host_services: [nginx, "{{ app_service }}"]
 s2:
-  services: [mysql]
+  host_services: [mysql]
 ```
 
 `common/` の設定ファイルでは、他のホストを `s2` のように名前で指定できる (セットアップで `/etc/hosts` に登録される)。たとえば `env.sh` の DB のホストを `s2` にすれば、ホストごとにファイルを分けなくてよい。全ホストで同じにできないファイルだけ、`s1/` などのホスト名のディレクトリに置く。

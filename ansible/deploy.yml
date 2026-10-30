@@ -37,7 +37,7 @@
 
     # Go などの PATH は ~/.bashrc で設定されているので、対話シェルとして読み込む
     - name: Build application
-      when: app_service in services
+      when: app_service in host_services
       ansible.builtin.command: bash -ic make
       args:
         chdir: "{{ app_dir }}"
@@ -54,7 +54,7 @@
 
     - name: Decide actions from changed config files
       ansible.builtin.set_fact:
-        deploy_plan: "{{ distributed_config.stdout_lines | deploy_actions(services, app_service, service_config_dirs) }}"
+        deploy_plan: "{{ distributed_config.stdout_lines | deploy_actions(host_services, app_service, service_config_dirs) }}"
 
     - name: Reload systemd
       when: deploy_plan.daemon_reload
@@ -74,7 +74,7 @@
         name: "{{ item }}"
         state: stopped
         enabled: false
-      loop: "{{ assigned_services | difference(services) }}"
+      loop: "{{ assigned_services | difference(host_services) }}"
 
     - name: Restart services
       become: true
@@ -90,7 +90,7 @@
         name: "{{ item }}"
         state: started
         enabled: true
-      loop: "{{ services | difference(deploy_plan.restart_services) }}"
+      loop: "{{ host_services | difference(deploy_plan.restart_services) }}"
 
     # 存在しないログは作らない (-c)
     - name: Rotate logs

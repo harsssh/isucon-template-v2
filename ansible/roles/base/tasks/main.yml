@@ -85,7 +85,7 @@
     path: ~/.bashrc
     marker: "# {mark} MANAGED BY ANSIBLE (base)"
     block: |
-      export PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
+      export PATH={{ go_bin_dirs | join(':') }}:$PATH
       alias sc="sudo systemctl"
       alias scs="sudo systemctl status"
       alias jc="sudo journalctl"

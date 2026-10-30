@@ -1,0 +1,4 @@
+# setup が {{ app_service }} の ExecStart から作った。ビルド方法が違うときは書き換える
+.PHONY: build
+build:
+	go build -o {{ app_binary | relpath(app_dir) }} .

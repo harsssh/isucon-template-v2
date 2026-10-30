@@ -4,6 +4,8 @@
 # root で実行する (MySQL に unix socket の root で接続するため)
 
 webapp_dir="$1"
+# script モジュールは tty 付きで実行するので、systemctl などが pager や色付きの出力を使わないようにする
+export SYSTEMD_PAGER='' PAGER=cat SYSTEMD_COLORS=0 SYSTEMD_URLIFY=0 TERM=dumb
 
 section() {
 	local title="$1"

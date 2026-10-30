@@ -32,6 +32,15 @@
     mode: "0755"
 
 # pprotein の画面で編集した設定を上書きしない
+# pprof はアプリが listen しているポートから取る。見つからないときは 8080 (ISUCON14 の参照実装) にする
+- name: Install pprotein targets
+  become: true
+  ansible.builtin.template:
+    src: targets.json.j2
+    dest: /etc/pprotein/data/targets.json
+    mode: "0644"
+    force: false
+
 - name: Install pprotein config
   become: true
   ansible.builtin.copy:
@@ -39,7 +48,7 @@
     dest: "/etc/pprotein/data/{{ item }}"
     mode: "0644"
     force: false
-  loop: [targets.json, alp.yml, slp.yml]
+  loop: [alp.yml, slp.yml]
 
 - name: Start pprotein-agent
   become: true

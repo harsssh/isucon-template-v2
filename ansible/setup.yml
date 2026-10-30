@@ -13,6 +13,9 @@
 
 - name: Install tools on all servers
   hosts: all
+  pre_tasks:
+    - name: Find application service
+      ansible.builtin.import_tasks: tasks/find_app_service.yml
   roles:
     - base
     - pprotein
@@ -27,6 +30,15 @@
   tasks:
     - name: Collect config files
       ansible.builtin.import_tasks: tasks/collect_config.yml
+
+    # Makefile が無い参照実装では、unit ファイルが起動する実行ファイルをビルドする Makefile を作る
+    - name: Create Makefile for application
+      when: (app_binary | default('') or '').startswith(app_dir ~ '/')
+      ansible.builtin.template:
+        src: templates/Makefile.j2
+        dest: "{{ app_dir }}/Makefile"
+        mode: "0644"
+        force: false
 
     - name: Commit and push imported files
       ansible.builtin.shell: |
