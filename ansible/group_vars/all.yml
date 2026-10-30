@@ -12,6 +12,8 @@ app_dir: "{{ webapp_dir }}/go"
 # app_service: isucon-go
 
 # 以下は通常変えない
+# サーバーに ssh するユーザー。ISUCON のサーバーは isucon
+ansible_user: isucon
 # ansible_user のホームディレクトリ。deploy を速くするため facts を集めないので、ansible_facts.user_dir は使えない
 home_dir: "/home/{{ ansible_user }}"
 # いずれかのホストに割り当てたサービス

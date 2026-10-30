@@ -1,8 +1,7 @@
 # ホスト名は ~/.ssh/config の Host 名と一致させる
 # セットアップ時にサーバーの hostname もこの名前に変わり、deploy で s1/ などのホスト別の設定が配布される
+# 変数は group_vars/all.yml に書き、ホストごとに変えるものだけここに書く
 all:
-  vars:
-    ansible_user: isucon
   # サービスの配置をホストごとに変えるときは host_services を上書きする
   # 例: s1 で nginx とアプリ、s2 で MySQL を動かす
   #   s1:
