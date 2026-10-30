@@ -1,20 +1,18 @@
-[
-  {
-    "Duration": 60,
-    "Label": "localhost",
-    "Type": "pprof",
-    "URL": "http://localhost:{{ app_port | default(8080, true) }}/debug/pprof/profile"
-  },
-  {
-    "Duration": 60,
-    "Label": "localhost",
-    "Type": "httplog",
-    "URL": "http://localhost:9000/debug/log/httplog"
-  },
-  {
-    "Duration": 60,
-    "Label": "localhost",
-    "Type": "slowlog",
-    "URL": "http://localhost:9000/debug/log/slowlog"
-  }
-]
+{#- inventory の host_services から、各ホストで動くサービスの計測データの取得先を作る -#}
+{#- pprof はアプリから、httplog と slowlog は各ホストの pprotein-agent から取る -#}
+{%- set ns = namespace(targets=[]) -%}
+{%- for host in groups.all -%}
+{%-   set h = hostvars[host] -%}
+{%-   set agent_url = 'http://' ~ host ~ ':19000' -%}
+{%-   if h.app_service in h.host_services -%}
+{%-     set ns.targets = ns.targets + [{'Label': host, 'Type': 'pprof', 'Duration': 60,
+          'URL': 'http://' ~ host ~ ':' ~ (h.app_port | default(8080, true)) ~ '/debug/pprof/profile'}] -%}
+{%-   endif -%}
+{%-   if 'nginx' in h.host_services -%}
+{%-     set ns.targets = ns.targets + [{'Label': host, 'Type': 'httplog', 'Duration': 60, 'URL': agent_url ~ '/debug/log/httplog'}] -%}
+{%-   endif -%}
+{%-   if (h.db_service | default('mysql')) in h.host_services -%}
+{%-     set ns.targets = ns.targets + [{'Label': host, 'Type': 'slowlog', 'Duration': 60, 'URL': agent_url ~ '/debug/log/slowlog'}] -%}
+{%-   endif -%}
+{%- endfor -%}
+{{ ns.targets | to_nice_json }}

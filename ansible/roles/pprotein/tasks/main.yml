@@ -31,16 +31,11 @@
     state: directory
     mode: "0755"
 
-# pprotein の画面で編集した設定を上書きしない
-# pprof はアプリが listen しているポートから取る。見つからないときは 8080 (ISUCON14 の参照実装) にする
 - name: Install pprotein targets
-  become: true
-  ansible.builtin.template:
-    src: targets.json.j2
-    dest: /etc/pprotein/data/targets.json
-    mode: "0644"
-    force: false
+  when: inventory_hostname in groups.primary
+  ansible.builtin.import_tasks: targets.yml
 
+# pprotein の画面で編集した設定を上書きしない
 - name: Install pprotein config
   become: true
   ansible.builtin.copy:

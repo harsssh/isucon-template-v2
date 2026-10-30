@@ -98,3 +98,10 @@
       ansible.builtin.command:
         argv: "{{ ['truncate', '-c', '-s', '0'] + rotated_logs }}"
       changed_when: true
+
+    # サービスの配置の変更を、pprotein が計測データを取るホストに反映する
+    - name: Update pprotein targets
+      when: inventory_hostname in groups.primary
+      ansible.builtin.include_role:
+        name: pprotein
+        tasks_from: targets

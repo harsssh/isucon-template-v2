@@ -6,6 +6,13 @@ After=network.target
 ExecStart=/usr/local/bin/pprotein-agent
 Environment=PPROTEIN_GIT_REPOSITORY={{ repo_dir }}
 Restart=always
+# ログや pprof を外部から取られないよう、localhost とプライベートネットワークからの接続だけを受け付ける
+# セキュリティグループで外部に開いていても届かない
+IPAddressDeny=any
+IPAddressAllow=localhost
+IPAddressAllow=10.0.0.0/8
+IPAddressAllow=172.16.0.0/12
+IPAddressAllow=192.168.0.0/16
 
 [Install]
 WantedBy=multi-user.target

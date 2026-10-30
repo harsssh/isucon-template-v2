@@ -74,14 +74,18 @@ func main() {
 }
 
 func initializeHandler(c echo.Context) error {
-    // 計測開始
-    http.Get("http://localhost:9000/api/group/collect")
+    // 計測開始。pprotein は primary (s1) で動くので、アプリがどのホストで動いても s1 を呼ぶ
+    http.Get("http://s1:9000/api/group/collect")
 }
 ```
 
 ```bash
 go mod tidy
 ```
+
+pprotein の取得先 (`targets.json`) は、setup と deploy のたびに `ansible/inventory.yml` の `host_services` から作り直す。アプリのホストから pprof、nginx のホストからアクセスログ、MySQL のホストから slow log を取る。pprotein の画面で編集しても上書きされるので、取得先は inventory で変える。
+
+pprotein と pprotein-agent には、localhost とプライベートネットワークからしか接続できない。
 
 pprotein http log の集約
 
