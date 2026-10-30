@@ -74,8 +74,10 @@ Ansible などは Nix の devShell にあり、direnv で読み込まれる。�
 - pprotein の取得先は、inventory の `host_services` から deploy のたびに作り直す。サービスの配置を変えたら、pprotein の画面ではなく inventory を変えて deploy する
 - アプリの `/initialize` からは `http://s1:9000/api/group/collect` を呼ぶ。アプリが s1 以外で動いても計測が始まるように
 - アクセスログは nginx の LTSV、スロークエリログは MySQL の slow log。alp と slp が全サーバーに入っている
+- アプリが pprotein に記録させる処理 (`/initialize` からの collect と pprof) は `/enable-pprotein` skill で入れる
 - alp の matching_groups は `/alp-matching-groups` skill で作る
 - 計測結果からボトルネックを判断するときは、推測ではなく pprotein、alp、slp の結果を根拠にする
+- ベンチマークの後の分析は `/analyze-pprotein` skill で行う
 
 ## `ansible/` を変更するとき
 
