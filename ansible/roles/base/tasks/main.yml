@@ -18,11 +18,23 @@
     dest: /etc/cloud/cloud.cfg.d/99-preserve-hostname.cfg
     mode: "0644"
 
-- name: Resolve hostname locally
+# 他のホストの IP は gather_facts で集めるので、--limit で一部のホストだけ実行すると分からない
+- name: All hosts must have gathered facts
+  ansible.builtin.assert:
+    that: groups.all | map('extract', hostvars) | selectattr('ansible_facts.default_ipv4', 'undefined') | length == 0
+    fail_msg: 他のホストの IP が分からないので、--limit を付けずに全ホストで実行してください
+
+# common/ の設定ファイルで他のホストを s2 のように名前で指定できるようにし、ホスト別の設定を減らす
+# 自分自身は 127.0.0.1 にして、自ホスト内の通信がループバックを通るようにする
+- name: Resolve all hosts by name
   become: true
-  ansible.builtin.lineinfile:
+  ansible.builtin.blockinfile:
     path: /etc/hosts
-    line: "127.0.0.1 {{ inventory_hostname }}"
+    marker: "# {mark} ISUCON HOSTS"
+    block: |
+      {% for host in groups.all %}
+      {{ '127.0.0.1' if host == inventory_hostname else hostvars[host].ansible_facts.default_ipv4.address }} {{ host }}
+      {% endfor %}
 
 - name: Install apt packages
   become: true

@@ -39,7 +39,7 @@ direnv を使わない場合は、各コマンドの前に `nix develop -c` を�
 
 `setup.yml` が行うこと:
 
-- 全サーバー: hostname の設定 (再起動後も保持)、ツール (bottom, alp, slp, pprotein-agent) と alias のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え (git で管理していない大きいファイルなどは既存の `~/webapp` からコピー)
+- 全サーバー: hostname の設定 (再起動後も保持)、全ホストの名前の `/etc/hosts` への登録、ツール (bottom, alp, slp, pprotein-agent) と alias のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え (git で管理していない大きいファイルなどは既存の `~/webapp` からコピー)
 - primary (`inventory.yml` の `primary`): `~/webapp` と `/etc` の設定ファイルのリポジトリへの取り込みと push、nginx の LTSV ログと MySQL の slow log の設定、pprotein の起動
 
 何度実行しても同じ状態になるので、途中で失敗したら原因を直して再実行すればよい。
@@ -110,6 +110,8 @@ s1:
 s2:
   services: [mysql]
 ```
+
+`common/` の設定ファイルでは、他のホストを `s2` のように名前で指定できる (セットアップで `/etc/hosts` に登録される)。たとえば `env.sh` の DB のホストを `s2` にすれば、ホストごとにファイルを分けなくてよい。全ホストで同じにできないファイルだけ、`s1/` などのホスト名のディレクトリに置く。
 
 Go 以外の実装を使うときやアプリのサービスが見つからないときは、`ansible/group_vars/all.yml` の `app_dir` と `app_service` を変える。
 
