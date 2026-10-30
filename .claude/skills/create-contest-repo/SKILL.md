@@ -11,7 +11,7 @@ ISUCON の練習や本番では、このテンプレートから回ごとにリ�
 
 | | 練習 | 本番 |
 |---|---|---|
-| リポジトリ名 | `isucon<回>-practice` (例: `isucon14-practice`) | `isucon<回>` (例: `isucon15`) |
+| リポジトリ名 | `<問題>-practice-<連番>` (例: `isucon14q-practice-3`) | `<問題>` (例: `isucon15q`) |
 | サーバー | 自分で起動した EC2 (`docs/practice.md`) | ポータルに表示されるサーバー |
 | ssh の設定 | `register-ssh-hosts` skill で登録する | ポータルの IP をユーザーから受け取って登録する |
 | `make setup` の前 | 確認せず進めてよい | 実行してよいかユーザーに確認する |
@@ -20,10 +20,12 @@ ISUCON の練習や本番では、このテンプレートから回ごとにリ�
 
 ## 手順
 
-1. 練習か本番か、何回目の ISUCON かを決める。ユーザーが言っていなければ聞く。練習ならサーバーの Name タグ (`isucon14-practice` など) からも分かる
+1. 練習か本番か、どの問題かを決める。ユーザーが言っていなければ聞く。練習ならサーバーの Name タグ (`isucon14-practice` など) からも分かる
+   - 問題は `isucon<回>` に、予選なら `q`、本選なら `f` を付けて表す (例: `isucon14q`, `isucon11f`)。過去のリポジトリ (`isucon12q`, `isucon11f-practice` など) と揃えるため
 2. 作るリポジトリの名前を決める
-   - `gh api user -q .login` で owner を調べ、`gh repo view <owner>/<名前>` で同名のリポジトリが無いか確かめる
-   - 同名のリポジトリがあれば、ユーザーに聞く。setup は `app/` が空のリポジトリにしか webapp を取り込めないので、サーバーを作り直して最初からやり直すなら、既存のリポジトリは使えない。`-2` のような連番を付けた名前を提案する
+   - `gh api user -q .login` で owner を調べ、`gh repo list <owner> --limit 1000 --json name -q '.[].name'` で既存のリポジトリ名を一覧する
+   - 練習: 同じ問題は何度も練習するので、毎回新しいリポジトリを作る。`<問題>-practice-<n>` の既存の最大の n に 1 を足す。無ければ 1 にする。連番の無い `<問題>-practice` は過去のものなので、番号の計算に含めない
+   - 本番: `<問題>` が既にあれば、使い回さずユーザーに聞く。setup は `app/` が空のリポジトリにしか webapp を取り込めないため
 3. テンプレートを決める。このリポジトリが `gh repo view --json isTemplate` で template ならこのリポジトリ、そうでなければ `gh repo view --json templateRepository` のリポジトリ
 4. テンプレートの親ディレクトリに移り、private で作って clone する
    ```bash
