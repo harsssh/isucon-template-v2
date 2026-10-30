@@ -20,7 +20,7 @@
           packages = [
             pkgs.ansible
             pkgs.ansible-lint
-            # Makefile と assets/ のスクリプト、テスト用
+            # Makefile と ansible/files のスクリプト、テスト用
             pkgs.bash
             pkgs.coreutils
             pkgs.gnumake

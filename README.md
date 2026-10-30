@@ -78,10 +78,8 @@ go mod tidy
 ```
 
 pprotein http log の集約
-```bash
-# この結果を pprotein の設定にペースト
-make matching-groups
-```
+
+Claude Code で `/alp-matching-groups` を実行し、出力された `matching_groups` を pprotein の httplog の設定にペーストする。
 
 ### 計測
 
@@ -123,11 +121,12 @@ s2:
 |---|---|
 | `make setup` | 競技サーバーの初回セットアップ |
 | `make deploy [BRANCH=...]` | 全サーバーへのデプロイ |
-| `make matching-groups` | pprotein (alp) の matching_groups の生成 |
 | `make lint` | ansible-lint |
 | `make test` | スクリプトとフィルターのテスト |
 
 サーバー上では alias (`sc`, `scs`, `jcfu` など) で systemctl と journalctl を操作する。
+
+nginx, MySQL, sysctl のチューニング用の設定例は [docs/tuning](docs/tuning) にある。使うときは `common/` に手でコピーする。
 
 ## リンク集
 

@@ -22,7 +22,7 @@
       changed_when: false
 
     - name: Copy config files
-      ansible.builtin.command:
-        argv: "{{ ['./assets/collect_config.sh'] + collect_paths + unit_files.stdout_lines }}"
+      ansible.builtin.script:
+        cmd: collect_config.sh {{ (collect_paths + unit_files.stdout_lines) | map('quote') | join(' ') }}
         chdir: "{{ repo_dir }}"
       changed_when: true

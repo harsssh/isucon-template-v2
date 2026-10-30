@@ -3,7 +3,7 @@ import subprocess
 import tempfile
 import unittest
 
-SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'distribute_config.sh')
+SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'files', 'distribute_config.sh')
 
 
 def write(path, content):

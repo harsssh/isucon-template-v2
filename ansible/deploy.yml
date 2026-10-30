@@ -24,10 +24,11 @@
         chdir: "{{ repo_dir }}/{{ build_dir }}"
       changed_when: true
 
+    # スクリプトは手元から送るので、サーバー上の checkout の状態によらない
     - name: Distribute config files
       become: true
-      ansible.builtin.command:
-        argv: [./assets/distribute_config.sh, "{{ inventory_hostname }}"]
+      ansible.builtin.script:
+        cmd: distribute_config.sh {{ inventory_hostname | quote }}
         chdir: "{{ repo_dir }}"
       register: distributed_config
       changed_when: distributed_config.stdout_lines | length > 0
