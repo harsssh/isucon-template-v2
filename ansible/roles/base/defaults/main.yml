@@ -1,3 +1,3 @@
 base_backup_path: /var/backups/isucon-setup.tar.gz
-base_bottom_version: "0.10.2"
+base_bottom_version: "0.14.9"
 base_go_version: "1.27.3"
