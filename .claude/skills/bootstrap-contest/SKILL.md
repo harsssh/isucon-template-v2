@@ -38,7 +38,7 @@ setup、計測の組み込み、最初のベンチマークの確認までを行
    - `git ls-files app` が `app/.gitkeep` だけ (テンプレートのまま)
    - `~/.ssh/config` か `~/.ssh/config.local` に、競技サーバーが `s1`, `s2`, ... で登録されている。サーバーが無ければ `launch-servers` skill で起動し、`register-ssh-hosts` skill で登録する
 2. `ansible/inventory.yml` の `hosts` を、登録したホスト (`s1` から台数分) に合わせる。他の行はコメントアウトする。変えたらコミットして main に push する
-3. `make survey` を実行する
+3. `make survey` を実行し、setup の前の状態として `mkdir -p survey/before && cp survey/*.md survey/before/` で残す
 4. 本番なら、`make setup` を実行してよいかユーザーに聞く。練習なら聞かずに進める
 5. `make setup` を実行し、終わったら `git pull` する
 
@@ -49,23 +49,29 @@ setup、計測の組み込み、最初のベンチマークの確認までを行
 - `git pull` すると、`import webapp and config from s1` と `configure logs for alp and slp and add files for deploy` の 2 つのコミットが入る
 - `app/` に webapp のファイルがある
 
-### 2. サーバーの状態を確かめる
+### 2. setup で壊れていないか確かめる
 
-`ansible/inventory.yml` の全ホストで、次を実行する。`<app_service>` は `survey/<ホスト>.md` の「WorkingDirectory が ... のサービスが 1 つに決まる」の行の候補、`<db_service>` は同じファイルのサービスの一覧にある `mysql` か `mariadb`。
+サービス名や URL は回ごとに違うので決め打ちしない。setup の前後で、動いているサービスと listen しているポートが減っていないかを比べる。setup が足すもの (pprotein, pprotein-agent, memcached と、その 9000, 19000, 11211 番) は増えてよい。HTTP で正しく応答するかは、手順 5 のベンチマークで確かめる。
 
-```bash
-ssh -o ClearAllForwardings=yes <ホスト> 'systemctl is-active nginx <db_service> <app_service> pprotein-agent; curl -s -o /dev/null -w "%{http_code}\n" localhost/'
-```
-
-`pprotein_server` グループのホスト (既定は s1) では、さらに次を実行する。
+1. `make survey` をもう一度実行する
+2. 全ホストで、前後の差を出す
 
 ```bash
-ssh -o ClearAllForwardings=yes s1 'systemctl is-active pprotein; cat /etc/pprotein/data/targets.json'
+for f in survey/before/*.md; do
+  h=$(basename "$f")
+  echo "== $h"
+  diff <(sed -n "/^## 動いているサービス/,/^## /p" "$f" | grep -oE "^ *[^ ]+\.service" | tr -d " " | sort) \
+       <(sed -n "/^## 動いているサービス/,/^## /p" "survey/$h" | grep -oE "^ *[^ ]+\.service" | tr -d " " | sort)
+  diff <(sed -n "/^## listen しているポート/,/^## /p" "$f" | awk "\$4 ~ /:[0-9]+\$/ {print \$4}" | sort -u) \
+       <(sed -n "/^## listen しているポート/,/^## /p" "survey/$h" | awk "\$4 ~ /:[0-9]+\$/ {print \$4}" | sort -u)
+done
 ```
+
+3. `pprotein_server` グループのホスト (既定は s1) で、`ssh -o ClearAllForwardings=yes s1 cat /etc/pprotein/data/targets.json` を実行する
 
 確認:
-- `systemctl is-active` の行が全て `active`
-- `curl` が 200 か 3xx
+- `diff` の出力に `<` で始まる行が無い (setup の前にあって後に無いサービスやポートが無い)
+- `make survey` に NG が無い
 - `targets.json` に、全ホストの `Label` がある
 
 ### 3. 計測の組み込みを PR にする
