@@ -1,0 +1,28 @@
+# 初回だけ実行する。2 回目以降は common/ を手で編集している前提で上書きしない
+- name: Check whether config files are already collected
+  ansible.builtin.stat:
+    path: "{{ repo_dir }}/common/etc"
+  register: collected_config
+
+- name: Collect config files into common/
+  when: not collected_config.stat.exists
+  block:
+    - name: Find unit files of related services
+      ansible.builtin.shell: |
+        set -o pipefail
+        {
+          printf '%s\n' {{ collect_services | join(' ') }}
+          systemctl list-unit-files --type=service --no-legend 'isu*' | awk '{print $1}'
+        } | while read -r service_name; do
+          systemctl show --value -p FragmentPath "$service_name"
+        done | sed '/^$/d'
+      args:
+        executable: /bin/bash
+      register: unit_files
+      changed_when: false
+
+    - name: Copy config files
+      ansible.builtin.command:
+        argv: "{{ ['./assets/collect_config.sh'] + collect_paths + unit_files.stdout_lines }}"
+        chdir: "{{ repo_dir }}"
+      changed_when: true

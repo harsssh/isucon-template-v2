@@ -1,0 +1,11 @@
+- name: Restart nginx
+  become: true
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: restarted
+
+- name: Restart mysql
+  become: true
+  ansible.builtin.systemd_service:
+    name: mysql
+    state: restarted

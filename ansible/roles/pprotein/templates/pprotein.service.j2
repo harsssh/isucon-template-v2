@@ -1,0 +1,15 @@
+[Unit]
+Description=pprotein
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/pprotein
+Environment=PPROTEIN_GIT_REPOSITORY={{ repo_dir }}
+# 無いと pprof が動かない
+Environment=HOME=/root
+# 設定ファイル, ログのスナップショットの保存場所
+WorkingDirectory=/etc/pprotein
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

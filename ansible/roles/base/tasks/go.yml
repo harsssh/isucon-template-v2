@@ -1,0 +1,21 @@
+# go 1.21 以降は go.mod の toolchain を自動で取得するので、既存の Go が 1.21 未満のときだけ使う
+- name: Check installed Go version
+  ansible.builtin.command: /usr/local/go/bin/go version
+  register: base_installed_go
+  changed_when: false
+  failed_when: false
+
+- name: Replace Go
+  when: ("go" ~ go_version ~ " ") not in base_installed_go.stdout
+  become: true
+  block:
+    - name: Remove old Go
+      ansible.builtin.file:
+        path: /usr/local/go
+        state: absent
+
+    - name: Extract Go
+      ansible.builtin.unarchive:
+        src: "https://go.dev/dl/go{{ go_version }}.linux-{{ release_arch }}.tar.gz"
+        dest: /usr/local
+        remote_src: true

@@ -20,96 +20,51 @@ done
 ```
 
 ローカルの `~/.ssh/config` に以下を設定。
+Host 名は `ansible/inventory.yml` のホスト名と揃える (最大 5 台を想定して s1 〜 s5)。
 ```
-Host isu
-    Hostname xxx.xxx.xxx.xxx
+Host s1 s2 s3 s4 s5 bench
     User isucon
     ForwardAgent yes
+
+Host s1
+    Hostname xxx.xxx.xxx.xxx
     # For pprotein
     LocalForward 9000 localhost:9000
 
+Host s2
+    Hostname yyy.yyy.yyy.yyy
+
 Host bench
-    Hostname yyy.yyy.yyy.yyy 
-    User isucon
-    ForwardAgent yes
+    Hostname zzz.zzz.zzz.zzz
 ```
 
 ## 初回計測までの手順
 
-### ソースコードの push まで
+### セットアップ
 
-名前は何でもいいが、短い方が楽
+手元のリポジトリで実行する。Ansible は Nix の devShell に入っている。
+
+1. `ansible/inventory.yml` の `hosts` を使うサーバーに合わせる
+2. `ansible/group_vars/all.yml` と `Taskfile.yml` の "Frequently changed" を編集して push する
+3. 全サーバーをセットアップする
+   ```bash
+   nix develop -c ansible-playbook ansible/setup.yml
+   ```
+4. 手元で `git pull` する (primary の webapp と設定ファイルが push されている)
+
+`setup.yml` が行うこと:
+
+- 全サーバー: hostname の設定、ツール (go-task, bottom, alp, slp, pprotein-agent) と alias のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え
+- primary (`inventory.yml` の `primary`): `~/webapp` と `/etc` の設定ファイルのリポジトリへの取り込みと push、nginx の LTSV ログと MySQL の slow log の設定、pprotein の起動
+
+何度実行しても同じ状態になるので、途中で失敗したら原因を直して再実行すればよい。
+
+Go が古すぎる (1.21 未満) 場合は新しくインストールする。
 ```bash
-git clone $REPO_URL $REPO_DIR
-cd $REPO_DIR
+nix develop -c ansible-playbook ansible/setup.yml --tags go
 ```
 
-go-task をインストール
-```bash
-assets/install_go_task.sh
-```
-
-"Frequently changed" の部分を編集してから, `SetupTasks.yml` を実行.
-```bash
-task -t SetupTasks.yml all
-source ~/.bashrc  # alias を読み込む
-```
-
-pprotein を起動
-```bash
-task enable -- pprotein
-```
-
-Go が古すぎる場合は新しくインストール
-```bash
-task -t SetupTasks.yml install-go
-source ~/.bashrc  # PATH を読み込む
-```
-
-gitignore を設定し, pushする
-```bash
-cd app
-cat << 'EOF' >> .gitignore
-node
-python
-# ...
-EOF
-
-git add -A && git commit -m "init" && git push
-```
-
-### ログの設定
-
-nginx
-```nginx configuration
-# /etc/nginx/nginx.conf
-log_format ltsv "time:$time_local"
-                "\thost:$remote_addr"
-                "\tforwardedfor:$http_x_forwarded_for"
-                "\treq:$request"
-                "\tstatus:$status"
-                "\tmethod:$request_method"
-                "\turi:$request_uri"
-                "\tsize:$body_bytes_sent"
-                "\treferer:$http_referer"
-                "\tua:$http_user_agent"
-                "\treqtime:$request_time"
-                "\tcache:$upstream_http_x_cache"
-                "\truntime:$upstream_http_x_runtime"
-                "\tapptime:$upstream_response_time"
-                "\tvhost:$host";
-access_log /var/log/nginx/access.log ltsv;
-```
-
-mysql
-```
-# /etc/mysql/mysql.conf.d/mysqld.cnf
-[mysqld]
-slow_query_log = 1
-slow_query_log_file = /var/log/mysql/mysql-slow.log
-long_query_time = 0
-log-queries-not-using-indexes
-```
+### pprotein の設定
 
 app (echo の場合)
 ```go
@@ -136,7 +91,7 @@ go mod tidy
 pprotein http log の集約
 ```bash
 # この結果を pprotein の設定にペースト
-task -t SetupTasks.yml generate-matching-groups
+task generate-matching-groups
 ```
 
 ### 計測
@@ -154,21 +109,13 @@ task
 
 分かりにくそう or 便利なものを補足します
 
-`SetupTasks.yml`
-```bash
-# 競技サーバーに s1, s2, ... の hostname を付けることで,
-# 設定ファイルを追加で読み込むことができるようになります
-task -t SetupTasks.yml hostname -- s1
-
-# 2台目以降のセットアップ用
-task -t SetupTasks.yml sub
-```
-
-`Taskfile.yml`
 ```bash
 # origin/my-branch が反映されます
 # 何も指定しない場合は origin/main が反映されます
 task deploy -- my-branch
+
+# common/ に加えて, hostname と同じ名前のディレクトリ (s1/ など) の設定ファイルも配布されます
+task deploy
 
 # service の起動 & 自動起動を有効化
 task enable -- nginx mysql

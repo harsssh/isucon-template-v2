@@ -1,0 +1,59 @@
+# pprotein-agent は全ホスト、pprotein サーバーは primary だけで動かす
+- name: Install pprotein, alp and slp
+  become: true
+  ansible.builtin.unarchive:
+    src: "{{ item.url }}"
+    dest: /usr/local/bin
+    remote_src: true
+    include: "{{ item.binaries }}"
+    creates: "/usr/local/bin/{{ item.binaries[0] }}"
+  loop:
+    - url: "https://github.com/kaz/pprotein/releases/download/v{{ pprotein_version }}/pprotein_{{ pprotein_version }}_linux_{{ release_arch }}.tar.gz"
+      binaries: [pprotein, pprotein-agent]
+    - url: "https://github.com/tkuchiki/alp/releases/download/v{{ alp_version }}/alp_linux_{{ release_arch }}.tar.gz"
+      binaries: [alp]
+    - url: "https://github.com/tkuchiki/slp/releases/download/v{{ slp_version }}/slp_linux_{{ release_arch }}.tar.gz"
+      binaries: [slp]
+
+- name: Install systemd units
+  become: true
+  ansible.builtin.template:
+    src: "{{ item }}.service.j2"
+    dest: "/etc/systemd/system/{{ item }}.service"
+    mode: "0644"
+  loop: [pprotein, pprotein-agent]
+  notify: Restart pprotein services
+
+- name: Create pprotein data directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/pprotein/data
+    state: directory
+    mode: "0755"
+
+# pprotein の画面で編集した設定を上書きしない
+- name: Install pprotein config
+  become: true
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/pprotein/data/{{ item }}"
+    mode: "0644"
+    force: false
+  loop: [targets.json, alp.yml, slp.yml]
+
+- name: Start pprotein-agent
+  become: true
+  ansible.builtin.systemd_service:
+    name: pprotein-agent
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Start pprotein
+  when: inventory_hostname in groups.primary
+  become: true
+  ansible.builtin.systemd_service:
+    name: pprotein
+    state: started
+    enabled: true
+    daemon_reload: true

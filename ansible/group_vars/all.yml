@@ -1,0 +1,39 @@
+# サーバー上のリポジトリは、手元のリポジトリの origin を clone したもの
+repo_url: "{{ lookup('ansible.builtin.pipe', 'git remote get-url origin') }}"
+repo_dir: "/home/isucon/{{ repo_url | basename | regex_replace('\\.git$', '') }}"
+webapp_dir: /home/isucon/webapp
+
+# Frequently changed
+# 初回セットアップ時に primary から common/ に集める設定ファイル。存在しないパスは無視される
+collect_paths:
+  - /home/isucon/env.sh
+  - /etc/mysql
+  - /etc/nginx
+  - /etc/sysctl.d
+# unit ファイルを集めるサービス。isu で始まるサービスは自動で追加される
+collect_services:
+  - mysql
+  - nginx
+
+# Rarely changed
+# GitHub の上限 (100MB) を超えるファイルは .gitignore に追加する
+gitignore_size_limit: 100M
+# 参照実装のうち使わない言語のディレクトリ
+gitignore_dirs:
+  - perl
+  - php
+  - python
+  - ruby
+  - rust
+  - node
+  - nodejs
+
+go_task_version: "3.54.0"
+bottom_version: "0.10.2"
+pprotein_version: "1.2.4"
+alp_version: "1.0.21"
+slp_version: "0.2.1"
+go_version: "1.27.3"
+
+# GitHub Releases の名前に使われるアーキテクチャ名
+release_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_facts.architecture] }}"

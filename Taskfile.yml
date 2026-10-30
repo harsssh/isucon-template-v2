@@ -8,8 +8,9 @@ vars:
   SERVICES: mysql nginx
 
   # Rarely changed
+  # ~/Taskfile.yml はリポジトリの Taskfile.yml へのシンボリックリンク
   REPO_DIR:
-    sh: find $HOME -maxdepth 2 -name "SetupTasks.yml" -type f -exec dirname {} \; | head -1
+    sh: dirname "$(readlink -f "$HOME/Taskfile.yml")"
   SRC_DIR: "{{.REPO_DIR}}/app/go"
 
 tasks:
@@ -79,6 +80,13 @@ tasks:
   reload-sysctl:
     desc: Reload sysctl configuration
     cmd: sudo sysctl -p
+
+  generate-matching-groups:
+    desc: Generate matching groups for pprotein
+    dir: "{{.REPO_DIR}}"
+    preconditions:
+      - git grep -lq 'func main()' -- '*.go'
+    cmd: ./assets/generate_matching_groups.py < $(git grep -l 'func main()' -- '*.go' | head -1)
 
   ####################
   #     Internal     #

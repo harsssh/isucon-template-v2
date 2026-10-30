@@ -1,0 +1,11 @@
+[Unit]
+Description=pprotein-agent
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/pprotein-agent
+Environment=PPROTEIN_GIT_REPOSITORY={{ repo_dir }}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

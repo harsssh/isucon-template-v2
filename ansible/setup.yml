@@ -1,0 +1,49 @@
+# 競技サーバーの初回セットアップ。何度実行しても同じ状態になる
+#   ansible-playbook ansible/setup.yml
+# Go を入れ替えるときだけ --tags go を付けて実行する
+- name: Check local repository
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Origin must be an SSH URL so that servers can push with the forwarded agent
+      ansible.builtin.assert:
+        that: repo_url is match('^(git@|ssh://)')
+        fail_msg: "origin が SSH 形式ではありません: {{ repo_url }}"
+
+- name: Install tools on all servers
+  hosts: all
+  roles:
+    - base
+    - pprotein
+
+# primary の webapp と設定ファイルをリポジトリに取り込んで push する
+# 他のホストはこの push の後に clone する
+- name: Import webapp on primary
+  hosts: primary
+  roles:
+    - repo
+    - access_log
+  tasks:
+    - name: Collect config files
+      ansible.builtin.import_tasks: tasks/collect_config.yml
+
+    - name: Commit and push imported files
+      ansible.builtin.shell: |
+        set -e
+        git add -A
+        if git diff --cached --quiet; then
+          echo "nothing to commit"
+          exit 0
+        fi
+        git commit -q -m "import webapp and config from {{ inventory_hostname }}"
+        git push -q origin HEAD
+      args:
+        chdir: "{{ repo_dir }}"
+      register: push_result
+      changed_when: push_result.stdout != "nothing to commit"
+
+- name: Link webapp on other servers
+  hosts: all:!primary
+  roles:
+    - repo

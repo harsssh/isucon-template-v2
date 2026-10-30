@@ -1,0 +1,67 @@
+# ~/webapp をリポジトリの app/ へのシンボリックリンクにする
+# primary は既存の ~/webapp を app/ に取り込み、他のホストは push 済みの app/ を使う
+- name: Clone repository
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ repo_dir }}"
+    accept_newhostkey: true
+    # サーバー上の変更を消さないよう、clone 済みなら何もしない
+    version: main
+    update: false
+
+- name: Check webapp directory
+  ansible.builtin.stat:
+    path: "{{ webapp_dir }}"
+  register: repo_webapp
+
+- name: Import webapp into repository
+  when:
+    - inventory_hostname in groups.primary
+    - repo_webapp.stat.isdir is defined and repo_webapp.stat.isdir
+    - not repo_webapp.stat.islnk
+  ansible.builtin.import_tasks: import_webapp.yml
+
+- name: Back up webapp directory
+  when:
+    - inventory_hostname not in groups.primary
+    - repo_webapp.stat.exists
+    - not repo_webapp.stat.islnk
+  ansible.builtin.command: mv {{ webapp_dir }} {{ webapp_dir }}.bak.{{ ansible_facts.date_time.epoch }}
+  changed_when: true
+
+- name: Link webapp to repository
+  ansible.builtin.file:
+    src: "{{ repo_dir }}/app"
+    dest: "{{ webapp_dir }}"
+    state: link
+
+- name: Find files exceeding GitHub size limit
+  when: inventory_hostname in groups.primary
+  ansible.builtin.find:
+    paths: "{{ repo_dir }}/app"
+    size: "{{ gitignore_size_limit }}"
+    recurse: true
+  register: repo_large_files
+
+# gitignore は ./ で始まるパターンにマッチしないので、app/ からの相対パスを / で始める
+- name: Ignore large files and unused implementations
+  when: inventory_hostname in groups.primary
+  ansible.builtin.blockinfile:
+    path: "{{ repo_dir }}/app/.gitignore"
+    create: true
+    mode: "0644"
+    marker: "# {mark} MANAGED BY ANSIBLE (repo)"
+    block: |
+      {% for file in repo_large_files.files %}
+      /{{ file.path | relpath(repo_dir ~ '/app') }}
+      {% endfor %}
+      {% for dir in gitignore_dirs %}
+      /{{ dir }}
+      {% endfor %}
+
+# alias task="task -g" で、どこからでも Taskfile.yml を使えるようにする
+- name: Link Taskfile to home directory
+  ansible.builtin.file:
+    src: "{{ repo_dir }}/Taskfile.yml"
+    dest: ~/Taskfile.yml
+    state: link

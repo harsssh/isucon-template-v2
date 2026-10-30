@@ -1,0 +1,83 @@
+# deploy で配布するホスト別の設定 (s1/ など) は hostname で選ばれるので、最初に設定する
+- name: Set hostname
+  become: true
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Resolve hostname locally
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ inventory_hostname }}"
+
+- name: Install apt packages
+  become: true
+  ansible.builtin.apt:
+    name: [git, tree, jq, graphviz, wget, watch]
+    update_cache: true
+    cache_valid_time: 3600
+    # 起動直後は unattended-upgrades が apt のロックを持っていることがある
+    lock_timeout: 300
+
+- name: Install bottom
+  become: true
+  ansible.builtin.apt:
+    deb: "https://github.com/ClementTsang/bottom/releases/download/{{ bottom_version }}/bottom_{{ bottom_version }}-1_{{ release_arch }}.deb"
+    lock_timeout: 300
+
+- name: Create bottom config directory
+  ansible.builtin.file:
+    path: ~/.config/bottom
+    state: directory
+    mode: "0755"
+
+- name: Install bottom config
+  ansible.builtin.copy:
+    src: bottom.toml
+    dest: ~/.config/bottom/bottom.toml
+    mode: "0644"
+
+- name: Install go-task
+  become: true
+  ansible.builtin.unarchive:
+    src: "https://github.com/go-task/task/releases/download/v{{ go_task_version }}/task_linux_{{ release_arch }}.tar.gz"
+    dest: /usr/local/bin
+    remote_src: true
+    include: [task]
+    creates: /usr/local/bin/task
+
+- name: Configure git
+  community.general.git_config:
+    scope: global
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+  loop:
+    - { name: user.name, value: "{{ inventory_hostname }}" }
+    - { name: user.email, value: "{{ inventory_hostname }}@example.com" }
+    - { name: core.editor, value: vim }
+    - { name: pull.rebase, value: "true" }
+
+- name: Configure shell
+  ansible.builtin.blockinfile:
+    path: ~/.bashrc
+    marker: "# {mark} MANAGED BY ANSIBLE (base)"
+    block: |
+      export PATH=/usr/local/go/bin:$HOME/go/bin:$PATH
+      eval "$(task --completion bash)"
+      alias task="task -g"
+      alias deploy="task deploy"
+      alias d="task deploy"
+      alias sc="sudo systemctl"
+      alias scs="sudo systemctl status"
+      alias jc="sudo journalctl"
+      alias jcf="sudo journalctl -f"
+      alias jcfu="sudo journalctl -f -u"
+      alias rm="rm -i"
+      alias mkdir="mkdir -p"
+      alias dc="docker compose"
+      alias g="git"
+      alias b="btm"
+
+- name: Install Go
+  ansible.builtin.import_tasks: go.yml
+  tags: [never, go]

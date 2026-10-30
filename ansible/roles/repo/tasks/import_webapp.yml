@@ -1,0 +1,36 @@
+- name: Find nested git repositories in webapp
+  ansible.builtin.find:
+    paths: "{{ webapp_dir }}"
+    patterns: .git
+    file_type: any
+    hidden: true
+    recurse: true
+  register: repo_nested_git
+
+# 入れ子の .git があると git add で中身が登録されず、他のホストに app/ が配られない
+- name: Webapp must not contain git repositories
+  ansible.builtin.assert:
+    that: repo_nested_git.matched == 0
+    fail_msg: "{{ repo_nested_git.files | map(attribute='path') | join(', ') }} を削除してから再実行してください"
+
+- name: Find files in app directory
+  ansible.builtin.find:
+    paths: "{{ repo_dir }}/app"
+    file_type: any
+    hidden: true
+    excludes: [.gitkeep]
+  register: repo_app_files
+
+- name: App directory must be empty before import
+  ansible.builtin.assert:
+    that: repo_app_files.matched == 0
+    fail_msg: "{{ repo_dir }}/app が空ではありません"
+
+- name: Remove placeholder app directory
+  ansible.builtin.file:
+    path: "{{ repo_dir }}/app"
+    state: absent
+
+- name: Move webapp into repository
+  ansible.builtin.command: mv {{ webapp_dir }} {{ repo_dir }}/app
+  changed_when: true

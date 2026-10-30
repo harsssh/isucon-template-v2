@@ -1,0 +1,16 @@
+# ホスト名は ~/.ssh/config の Host 名と一致させる
+# セットアップ時にサーバーの hostname もこの名前に変わり、deploy で s1/ などのホスト別の設定が配布される
+all:
+  vars:
+    ansible_user: isucon
+  hosts:
+    s1:
+    s2:
+    s3:
+    # s4:
+    # s5:
+  children:
+    # webapp の取り込み元、設定ファイルの収集元、pprotein サーバーを置くホスト。1 台だけ指定する
+    primary:
+      hosts:
+        s1:
