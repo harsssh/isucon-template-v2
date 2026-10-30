@@ -1,26 +1,14 @@
 # isucon-template-v2
 
-## 練習環境の準備
-https://github.com/matsuu/aws-isucon
+ISUCON 本番で使う、競技サーバーのセットアップと計測の手順。
 
-上記リポジトリに記載の AMI からインスタンスを起動。
-以下のユーザーデータを設定すると便利。
-```bash
-#!/bin/bash -ex
+練習用のサーバーを用意する場合は、[練習環境の準備](docs/practice.md) を参照する。
 
-# スペース区切り
-USERS="harsssh"
-
-for user in $USERS; do
-    sudo -u isucon mkdir -p /home/isucon/.ssh
-    sudo -u isucon chmod 700 /home/isucon/.ssh
-    curl "https://github.com/${user}.keys" | sudo -u isucon tee -a /home/isucon/.ssh/authorized_keys
-    sudo -u isucon chmod 600 /home/isucon/.ssh/authorized_keys
-done
-```
+## サーバーへの接続
 
 ローカルの `~/.ssh/config` に以下を設定。
-Host 名は `ansible/inventory.yml` のホスト名と揃える (最大 5 台を想定して s1 〜 s5)。
+接続先とユーザー名は競技環境に合わせる。
+Host 名は `ansible/inventory.yml` のホスト名と揃える (最大 5 台を想定して `s1` から `s5`)。
 ```
 Host s1 s2 s3 s4 s5 bench
     User isucon
@@ -42,20 +30,20 @@ Host bench
 
 ### セットアップ
 
-手元のリポジトリで実行する。Ansible は Nix の devShell に入っていて、`direnv allow` しておくとリポジトリに入ったときに自動で読み込まれる。
+コマンドはすべて手元のリポジトリで実行する。Ansible などは Nix の devShell に入っていて、`direnv allow` しておくとリポジトリに入ったときに自動で読み込まれる。
 direnv を使わない場合は、各コマンドの前に `nix develop -c` を付ける。
 
 1. `ansible/inventory.yml` の `hosts` を使うサーバーに合わせる
-2. `ansible/group_vars/all.yml` と `Taskfile.yml` の "Frequently changed" を編集して push する
+2. `ansible/group_vars/all.yml` の "Frequently changed" を編集して push する
 3. 全サーバーをセットアップする
    ```bash
-   ansible-playbook ansible/setup.yml
+   make setup
    ```
 4. 手元で `git pull` する (primary の webapp と設定ファイルが push されている)
 
 `setup.yml` が行うこと:
 
-- 全サーバー: hostname の設定 (再起動後も保持)、ツール (go-task, bottom, alp, slp, pprotein-agent) と alias のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え (git で管理していない大きいファイルなどは既存の `~/webapp` からコピー)
+- 全サーバー: hostname の設定 (再起動後も保持)、ツール (bottom, alp, slp, pprotein-agent) と alias のインストール、リポジトリの clone、`~/webapp` をリポジトリの `app/` へのシンボリックリンクに置き換え (git で管理していない大きいファイルなどは既存の `~/webapp` からコピー)
 - primary (`inventory.yml` の `primary`): `~/webapp` と `/etc` の設定ファイルのリポジトリへの取り込みと push、nginx の LTSV ログと MySQL の slow log の設定、pprotein の起動
 
 何度実行しても同じ状態になるので、途中で失敗したら原因を直して再実行すればよい。
@@ -92,46 +80,54 @@ go mod tidy
 pprotein http log の集約
 ```bash
 # この結果を pprotein の設定にペースト
-task generate-matching-groups
+make matching-groups
 ```
 
 ### 計測
 
 デプロイすれば準備完了
 ```bash
-task deploy
+make deploy
 ```
 
-## Taskfile の補足
-基本的な説明は表示される help を見てください
-```bash
-task
-```
-
-分かりにくそう or 便利なものを補足します
+## デプロイ
 
 ```bash
-# origin/my-branch が反映されます
-# 何も指定しない場合は origin/main が反映されます
-task deploy -- my-branch
+# origin/main を全サーバーにデプロイする
+make deploy
 
-# common/ に加えて, hostname と同じ名前のディレクトリ (s1/ など) の設定ファイルも配布されます
-task deploy
-
-# service の起動 & 自動起動を有効化
-task enable -- nginx mysql
-
-# service の停止 & 自動起動を無効化
-task disable -- nginx mysql
-
-# 変数に設定したすべての service を再起動
-task restart-all
-
-# 変数に設定したすべての service の状態を表示
-task status-all
+# origin/my-branch をデプロイする
+make deploy BRANCH=my-branch
 ```
 
-`Taskfile.yml` は `~` にシンボリックリンクを置いていて, `alias task="task -g"` を設定しているので, どこからでも利用できます.
+`deploy.yml` は各サーバーで以下を行う。
+
+1. origin のブランチを checkout する (サーバー上の変更は捨てる)
+2. アプリを割り当てたホストで `app_service` をビルドする (`build_dir` で `make`)
+3. `common/` とホスト名のディレクトリ (`s1/` など) の設定ファイルを配布する。同じパスのファイルはホスト名のディレクトリを優先する
+4. サービスを再起動する。アプリは毎回、nginx や MySQL は設定ファイルか unit ファイルが変わったときだけ再起動する
+5. access.log と slow log を空にする
+
+サービスの配置は `ansible/inventory.yml` の `services` で変える。他のホストに割り当てたサービスは、デプロイ時に停止して自動起動を無効にする。
+
+```yaml
+s1:
+  services: [nginx, isucon-go]
+s2:
+  services: [mysql]
+```
+
+## Makefile
+
+| コマンド | 内容 |
+|---|---|
+| `make setup` | 競技サーバーの初回セットアップ |
+| `make deploy [BRANCH=...]` | 全サーバーへのデプロイ |
+| `make matching-groups` | pprotein (alp) の matching_groups の生成 |
+| `make lint` | ansible-lint |
+| `make test` | スクリプトとフィルターのテスト |
+
+サーバー上では alias (`sc`, `scs`, `jcfu` など) で systemctl と journalctl を操作する。
 
 ## リンク集
 
