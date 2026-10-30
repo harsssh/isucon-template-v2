@@ -1,6 +1,6 @@
 ---
 name: create-contest-repo
-description: isucon-template-v2 から、練習用または本番用の private リポジトリを作って手元に clone し、make survey まで進める。「リポジトリを作って」「練習を始める」「本番の準備」「新しい回の repo」と言われたとき、または練習用のサーバーを作り直して最初からやり直すときに使う。
+description: isucon-template-v2 から、練習用または本番用の private リポジトリを作って手元に clone する。競技の前に作っておく。「リポジトリを作って」「新しい回の repo」と言われたとき、または練習用のサーバーを作り直して最初からやり直すときに使う。
 ---
 
 # create-contest-repo
@@ -13,7 +13,6 @@ ISUCON の練習や本番では、このテンプレートから回ごとにリ�
 |---|---|---|
 | リポジトリ名 | `<問題>-practice-<連番>` (例: `isucon14-practice-3`) | `<問題>` (例: `isucon15`) |
 | サーバー | matsuu/aws-isucon の AMI から起動した EC2 | 運営の CloudFormation のテンプレートから作った stack の EC2 |
-| `make setup` の前 | 確認せず進めてよい | 実行してよいかユーザーに確認する |
 
 どちらでも、リポジトリは必ず private にする。本番中にコードを公開することは競技のルールで禁止されている。
 
@@ -32,10 +31,7 @@ ISUCON の練習や本番では、このテンプレートから回ごとにリ�
    ```
    - テンプレートのコピーは非同期なので、clone が空になることがある。`git -C <名前> log` が失敗したら、数秒待って `git -C <名前> pull origin main` をやり直す
 5. 作ったリポジトリで `direnv allow` を実行する
-6. サーバーがまだ無ければ `launch-servers` skill で起動し、`register-ssh-hosts` skill で ssh の設定を登録する
-7. `ansible/inventory.yml` の `hosts` を、登録したサーバー (`s1` から台数分) に合わせる。変えたらコミットして push する
-8. `make survey` を実行し、NG の項目と、その原因と直し方をユーザーに伝える
-9. NG が無ければ `make setup` に進む。本番では実行してよいか確認してから進める
+6. 作ったリポジトリのパスをユーザーに伝える。setup から最初の計測までは、サーバーを起動した後にそのリポジトリで `bootstrap-contest` skill で進める
 
 ## 注意
 

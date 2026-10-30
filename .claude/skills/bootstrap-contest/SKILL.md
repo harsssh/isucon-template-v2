@@ -1,11 +1,13 @@
 ---
 name: bootstrap-contest
-description: 練習や本番の開始から、最初のベンチマークが pprotein で計測できる状態になるまでを、決まった手順と確認で進める。想定と違う結果が出たら直さずに止まる。「練習を始めて」「本番の準備をして」「計測できるところまで進めて」と言われたときに使う。
+description: テンプレートから作った競技用のリポジトリで、最初のベンチマークが pprotein で計測できる状態になるまでを、決まった手順と確認で進める。想定と違う結果が出たら直さずに止まる。「練習を始めて」「本番の準備をして」「計測できるところまで進めて」と言われたときに使う。
 ---
 
 # bootstrap-contest
 
-リポジトリの作成、setup、計測の組み込み、最初のベンチマークの確認までを行う。各ステップに「確認」があり、全て満たしたときだけ次に進む。
+setup、計測の組み込み、最初のベンチマークの確認までを行う。各ステップに「確認」があり、全て満たしたときだけ次に進む。
+
+競技用のリポジトリは、競技の前にこのテンプレートから作ってあり、テンプレートのままの状態から始める (`create-contest-repo` skill で作れる)。作業はそのリポジトリで行う。
 
 この skill は軽いモデルでも実行できるように書いてある。手順に無い判断や修正はしない。
 
@@ -29,11 +31,19 @@ description: 練習や本番の開始から、最初のベンチマークが ppr
 
 ## 手順
 
-### 1. リポジトリを作って setup する
+### 1. setup する
 
-`create-contest-repo` skill に従い、`make setup` まで進める。
+1. 前提を確かめる。どれかを満たさなければ止まる
+   - `gh repo view --json visibility -q .visibility` が `PRIVATE`。setup はサーバーの設定 (DB のパスワードなど) を push するため
+   - `git ls-files app` が `app/.gitkeep` だけ (テンプレートのまま)
+   - `~/.ssh/config` か `~/.ssh/config.local` に、競技サーバーが `s1`, `s2`, ... で登録されている。サーバーが無ければ `launch-servers` skill で起動し、`register-ssh-hosts` skill で登録する
+2. `ansible/inventory.yml` の `hosts` を、登録したホスト (`s1` から台数分) に合わせる。他の行はコメントアウトする。変えたらコミットして main に push する
+3. `make survey` を実行する
+4. 本番なら、`make setup` を実行してよいかユーザーに聞く。練習なら聞かずに進める
+5. `make setup` を実行し、終わったら `git pull` する
 
 確認:
+- `ssh s1 true` などで、全ホストに接続できる
 - `make survey` に NG が無い (NG があれば、そこで止まる)
 - `make setup` の `PLAY RECAP` で、全ホストの `failed=0` と `unreachable=0`
 - `git pull` すると、`import webapp and config from s1` と `configure logs for alp and slp and add files for deploy` の 2 つのコミットが入る
